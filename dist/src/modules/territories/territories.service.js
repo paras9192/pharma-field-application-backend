@@ -52,7 +52,7 @@ let TerritoriesService = class TerritoriesService {
     }
     async findDistrictsByState(stateId) {
         return this.prisma.district.findMany({
-            where: { stateId },
+            where: stateId ? { stateId } : {},
             include: { state: true },
             orderBy: { name: 'asc' },
         });
@@ -82,7 +82,7 @@ let TerritoriesService = class TerritoriesService {
     }
     async findCitiesByDistrict(districtId) {
         return this.prisma.city.findMany({
-            where: { districtId },
+            where: districtId ? { districtId } : {},
             include: { district: { include: { state: true } } },
             orderBy: { name: 'asc' },
         });

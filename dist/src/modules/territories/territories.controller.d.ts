@@ -77,7 +77,7 @@ export declare class TerritoriesController {
         createdAt: Date;
         stateId: number;
     }>;
-    findDistrictsByState(stateId: number): Promise<({
+    findDistrictsByState(stateId?: number): Promise<({
         state: {
             id: number;
             name: string;
@@ -129,7 +129,7 @@ export declare class TerritoriesController {
         createdAt: Date;
         districtId: number;
     }>;
-    findCitiesByDistrict(districtId: number): Promise<({
+    findCitiesByDistrict(districtId?: number): Promise<({
         district: {
             state: {
                 id: number;
@@ -222,88 +222,6 @@ export declare class TerritoriesController {
             totalPages: number;
         };
     }>;
-    findOneTerritory(id: number): Promise<{
-        employeeTerritories: ({
-            user: {
-                id: string;
-                name: string;
-                role: {
-                    id: number;
-                    name: import("@prisma/client").$Enums.RoleName;
-                    description: string | null;
-                };
-                email: string;
-            };
-        } & {
-            id: number;
-            userId: string;
-            territoryId: number;
-            assignedAt: Date;
-            assignedById: string | null;
-        })[];
-        city: {
-            district: {
-                state: {
-                    id: number;
-                    name: string;
-                    createdAt: Date;
-                    code: string;
-                };
-            } & {
-                id: number;
-                name: string;
-                createdAt: Date;
-                stateId: number;
-            };
-        } & {
-            id: number;
-            name: string;
-            createdAt: Date;
-            districtId: number;
-        };
-    } & {
-        id: number;
-        name: string;
-        description: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        code: string | null;
-        cityId: number;
-    }>;
-    updateTerritory(id: number, data: Partial<CreateTerritoryDto> & {
-        isActive?: boolean;
-    }): Promise<{
-        city: {
-            district: {
-                state: {
-                    id: number;
-                    name: string;
-                    createdAt: Date;
-                    code: string;
-                };
-            } & {
-                id: number;
-                name: string;
-                createdAt: Date;
-                stateId: number;
-            };
-        } & {
-            id: number;
-            name: string;
-            createdAt: Date;
-            districtId: number;
-        };
-    } & {
-        id: number;
-        name: string;
-        description: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        code: string | null;
-        cityId: number;
-    }>;
     assignTerritory(dto: AssignTerritoryDto, currentUserId: string): Promise<{
         user: {
             id: string;
@@ -390,4 +308,86 @@ export declare class TerritoriesController {
         assignedAt: Date;
         assignedById: string | null;
     })[]>;
+    findOneTerritory(id: number): Promise<{
+        employeeTerritories: ({
+            user: {
+                id: string;
+                name: string;
+                role: {
+                    id: number;
+                    name: import("@prisma/client").$Enums.RoleName;
+                    description: string | null;
+                };
+                email: string;
+            };
+        } & {
+            id: number;
+            userId: string;
+            territoryId: number;
+            assignedAt: Date;
+            assignedById: string | null;
+        })[];
+        city: {
+            district: {
+                state: {
+                    id: number;
+                    name: string;
+                    createdAt: Date;
+                    code: string;
+                };
+            } & {
+                id: number;
+                name: string;
+                createdAt: Date;
+                stateId: number;
+            };
+        } & {
+            id: number;
+            name: string;
+            createdAt: Date;
+            districtId: number;
+        };
+    } & {
+        id: number;
+        name: string;
+        description: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        code: string | null;
+        cityId: number;
+    }>;
+    updateTerritory(id: number, data: Partial<CreateTerritoryDto> & {
+        isActive?: boolean;
+    }): Promise<{
+        city: {
+            district: {
+                state: {
+                    id: number;
+                    name: string;
+                    createdAt: Date;
+                    code: string;
+                };
+            } & {
+                id: number;
+                name: string;
+                createdAt: Date;
+                stateId: number;
+            };
+        } & {
+            id: number;
+            name: string;
+            createdAt: Date;
+            districtId: number;
+        };
+    } & {
+        id: number;
+        name: string;
+        description: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        code: string | null;
+        cityId: number;
+    }>;
 }

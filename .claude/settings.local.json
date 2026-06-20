@@ -9,7 +9,9 @@
       "Bash(pg_isready -h localhost -p 5432)",
       "Bash(brew services *)",
       "Bash(psql postgres *)",
-      "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\(Object.keys\\(p\\).slice\\(0,10\\)\\)\")"
+      "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\(Object.keys\\(p\\).slice\\(0,10\\)\\)\")",
+      "Read(//Users/paraslohia/**)",
+      "Bash(npm create *)"
     ]
   }
 }

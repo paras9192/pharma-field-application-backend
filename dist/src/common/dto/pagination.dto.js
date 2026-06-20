@@ -45,8 +45,10 @@ __decorate([
     __metadata("design:type", String)
 ], PaginationDto.prototype, "search", void 0);
 function paginate(page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
-    return { skip, take: limit };
+    const p = Number(page) || 1;
+    const l = Number(limit) || 20;
+    const skip = (p - 1) * l;
+    return { skip, take: l };
 }
 function buildPaginatedResponse(data, total, page, limit) {
     return {

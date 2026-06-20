@@ -53,9 +53,9 @@ export class TerritoriesService {
     });
   }
 
-  async findDistrictsByState(stateId: number) {
+  async findDistrictsByState(stateId?: number) {
     return this.prisma.district.findMany({
-      where: { stateId },
+      where: stateId ? { stateId } : {},
       include: { state: true },
       orderBy: { name: 'asc' },
     });
@@ -87,9 +87,9 @@ export class TerritoriesService {
     });
   }
 
-  async findCitiesByDistrict(districtId: number) {
+  async findCitiesByDistrict(districtId?: number) {
     return this.prisma.city.findMany({
-      where: { districtId },
+      where: districtId ? { districtId } : {},
       include: { district: { include: { state: true } } },
       orderBy: { name: 'asc' },
     });

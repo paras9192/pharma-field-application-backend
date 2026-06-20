@@ -64,12 +64,6 @@ let TerritoriesController = class TerritoriesController {
     findAllTerritories(query) {
         return this.territoriesService.findAllTerritories(query);
     }
-    findOneTerritory(id) {
-        return this.territoriesService.findOneTerritory(id);
-    }
-    updateTerritory(id, data) {
-        return this.territoriesService.updateTerritory(id, data);
-    }
     assignTerritory(dto, currentUserId) {
         return this.territoriesService.assignTerritory(dto, currentUserId);
     }
@@ -78,6 +72,12 @@ let TerritoriesController = class TerritoriesController {
     }
     getUserTerritories(userId) {
         return this.territoriesService.getUserTerritories(userId);
+    }
+    findOneTerritory(id) {
+        return this.territoriesService.findOneTerritory(id);
+    }
+    updateTerritory(id, data) {
+        return this.territoriesService.updateTerritory(id, data);
     }
 };
 exports.TerritoriesController = TerritoriesController;
@@ -124,7 +124,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)('districts'),
     (0, swagger_1.ApiOperation)({ summary: 'List districts by state' }),
-    __param(0, (0, common_1.Query)('stateId', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Query)('stateId', new common_1.ParseIntPipe({ optional: true }))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
@@ -149,7 +149,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)('cities'),
     (0, swagger_1.ApiOperation)({ summary: 'List cities by district' }),
-    __param(0, (0, common_1.Query)('districtId', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Query)('districtId', new common_1.ParseIntPipe({ optional: true }))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
@@ -171,24 +171,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], TerritoriesController.prototype, "findAllTerritories", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get territory details with assigned employees' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
-], TerritoriesController.prototype, "findOneTerritory", null);
-__decorate([
-    (0, common_1.Patch)(':id'),
-    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
-    (0, swagger_1.ApiOperation)({ summary: 'Update territory' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
-    __metadata("design:returntype", void 0)
-], TerritoriesController.prototype, "updateTerritory", null);
 __decorate([
     (0, common_1.Post)('assign'),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
@@ -218,6 +200,24 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], TerritoriesController.prototype, "getUserTerritories", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get territory details with assigned employees' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TerritoriesController.prototype, "findOneTerritory", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Update territory' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", void 0)
+], TerritoriesController.prototype, "updateTerritory", null);
 exports.TerritoriesController = TerritoriesController = __decorate([
     (0, swagger_1.ApiTags)('Territories'),
     (0, swagger_1.ApiBearerAuth)(),

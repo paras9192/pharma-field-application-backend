@@ -46,7 +46,7 @@ export declare class TerritoriesService {
         createdAt: Date;
         stateId: number;
     }>;
-    findDistrictsByState(stateId: number): Promise<({
+    findDistrictsByState(stateId?: number): Promise<({
         state: {
             id: number;
             name: string;
@@ -98,7 +98,7 @@ export declare class TerritoriesService {
         createdAt: Date;
         districtId: number;
     }>;
-    findCitiesByDistrict(districtId: number): Promise<({
+    findCitiesByDistrict(districtId?: number): Promise<({
         district: {
             state: {
                 id: number;

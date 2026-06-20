@@ -3,7 +3,7 @@ export declare class PaginationDto {
     limit?: number;
     search?: string;
 }
-export declare function paginate(page?: number, limit?: number): {
+export declare function paginate(page?: number | string, limit?: number | string): {
     skip: number;
     take: number;
 };

@@ -69,7 +69,7 @@ export class TerritoriesController {
 
   @Get('districts')
   @ApiOperation({ summary: 'List districts by state' })
-  findDistrictsByState(@Query('stateId', ParseIntPipe) stateId: number) {
+  findDistrictsByState(@Query('stateId', new ParseIntPipe({ optional: true })) stateId?: number) {
     return this.territoriesService.findDistrictsByState(stateId);
   }
 
@@ -90,7 +90,7 @@ export class TerritoriesController {
 
   @Get('cities')
   @ApiOperation({ summary: 'List cities by district' })
-  findCitiesByDistrict(@Query('districtId', ParseIntPipe) districtId: number) {
+  findCitiesByDistrict(@Query('districtId', new ParseIntPipe({ optional: true })) districtId?: number) {
     return this.territoriesService.findCitiesByDistrict(districtId);
   }
 
@@ -107,22 +107,6 @@ export class TerritoriesController {
   @ApiOperation({ summary: 'List all territories' })
   findAllTerritories(@Query() query: PaginationDto & { cityId?: number; isActive?: string }) {
     return this.territoriesService.findAllTerritories(query);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get territory details with assigned employees' })
-  findOneTerritory(@Param('id', ParseIntPipe) id: number) {
-    return this.territoriesService.findOneTerritory(id);
-  }
-
-  @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiOperation({ summary: 'Update territory' })
-  updateTerritory(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<CreateTerritoryDto> & { isActive?: boolean },
-  ) {
-    return this.territoriesService.updateTerritory(id, data);
   }
 
   // ─── Employee Assignments ─────────────────────────────────────────────────
@@ -149,5 +133,21 @@ export class TerritoriesController {
   @ApiOperation({ summary: 'Get territories assigned to a user' })
   getUserTerritories(@Param('userId') userId: string) {
     return this.territoriesService.getUserTerritories(userId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get territory details with assigned employees' })
+  findOneTerritory(@Param('id', ParseIntPipe) id: number) {
+    return this.territoriesService.findOneTerritory(id);
+  }
+
+  @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Update territory' })
+  updateTerritory(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: Partial<CreateTerritoryDto> & { isActive?: boolean },
+  ) {
+    return this.territoriesService.updateTerritory(id, data);
   }
 }

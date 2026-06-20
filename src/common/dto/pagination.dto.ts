@@ -24,9 +24,11 @@ export class PaginationDto {
   search?: string;
 }
 
-export function paginate(page = 1, limit = 20) {
-  const skip = (page - 1) * limit;
-  return { skip, take: limit };
+export function paginate(page: number | string = 1, limit: number | string = 20) {
+  const p = Number(page) || 1;
+  const l = Number(limit) || 20;
+  const skip = (p - 1) * l;
+  return { skip, take: l };
 }
 
 export function buildPaginatedResponse<T>(data: T[], total: number, page: number, limit: number) {
