@@ -47,6 +47,9 @@ const common_1 = require("@nestjs/common");
 const bcrypt = __importStar(require("bcryptjs"));
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
+const role_enum_1 = require("../../common/enums/role.enum");
+const auth_service_1 = require("../auth/auth.service");
+const mail_service_1 = require("../../mail/mail.service");
 const USER_SELECT = {
     id: true,
     name: true,
@@ -63,8 +66,12 @@ const USER_SELECT = {
 };
 let UsersService = class UsersService {
     prisma;
-    constructor(prisma) {
+    authService;
+    mail;
+    constructor(prisma, authService, mail) {
         this.prisma = prisma;
+        this.authService = authService;
+        this.mail = mail;
     }
     async create(dto, createdById) {
         const [roleRecord, existingEmail, existingPhone] = await Promise.all([
@@ -99,6 +106,8 @@ let UsersService = class UsersService {
             },
             select: USER_SELECT,
         });
+        const token = this.authService.generateWelcomeToken(user.id, user.email);
+        this.mail.sendWelcomeEmail(user, token);
         return user;
     }
     async findAll(query) {
@@ -189,8 +198,12 @@ let UsersService = class UsersService {
         await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
         return { message: 'Password changed successfully' };
     }
-    async adminResetPassword(userId, newPassword) {
-        await this.findOne(userId);
+    async adminResetPassword(userId, newPassword, currentUser) {
+        const target = await this.findOne(userId);
+        if (currentUser.role.name === role_enum_1.Role.ADMIN &&
+            target.role?.name === role_enum_1.Role.SUPER_ADMIN) {
+            throw new common_1.ForbiddenException('Admins cannot reset a Super Admin password');
+        }
         const passwordHash = await bcrypt.hash(newPassword, 10);
         await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
         return { message: 'Password reset successfully' };
@@ -199,6 +212,8 @@ let UsersService = class UsersService {
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        auth_service_1.AuthService,
+        mail_service_1.MailService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

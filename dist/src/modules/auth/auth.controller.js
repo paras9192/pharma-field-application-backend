@@ -20,6 +20,7 @@ const local_auth_guard_1 = require("./guards/local-auth.guard");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const login_dto_1 = require("./dto/login.dto");
 const refresh_token_dto_1 = require("./dto/refresh-token.dto");
+const set_password_dto_1 = require("./dto/set-password.dto");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let AuthController = class AuthController {
     authService;
@@ -37,6 +38,9 @@ let AuthController = class AuthController {
     }
     getProfile(userId) {
         return this.authService.getProfile(userId);
+    }
+    setPassword(dto) {
+        return this.authService.setPassword(dto.token, dto.password);
     }
 };
 exports.AuthController = AuthController;
@@ -79,6 +83,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Post)('set-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Set password via welcome email link (no auth required)' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [set_password_dto_1.SetPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "setPassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),

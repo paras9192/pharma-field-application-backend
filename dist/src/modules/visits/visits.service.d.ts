@@ -2,9 +2,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { MailService } from '../../mail/mail.service';
 export declare class VisitsService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private mail;
+    constructor(prisma: PrismaService, mail: MailService);
     create(userId: string, dto: CreateVisitDto): Promise<{
         user: {
             id: string;
@@ -18,7 +20,9 @@ export declare class VisitsService {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -75,7 +79,9 @@ export declare class VisitsService {
             doctor: {
                 id: string;
                 name: string;
+                email: string | null;
                 specialization: string | null;
+                clinicName: string | null;
             } | null;
             chemist: {
                 id: string;
@@ -131,7 +137,9 @@ export declare class VisitsService {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -180,7 +188,9 @@ export declare class VisitsService {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -229,7 +239,9 @@ export declare class VisitsService {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -278,7 +290,9 @@ export declare class VisitsService {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;

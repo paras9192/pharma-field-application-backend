@@ -46,9 +46,9 @@ export declare class DashboardService {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
+            date: Date;
             notes: string | null;
             status: import("@prisma/client").$Enums.AttendanceStatus;
-            date: Date;
             checkInTime: Date | null;
             checkInLat: import("@prisma/client-runtime-utils").Decimal | null;
             checkInLng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -67,9 +67,9 @@ export declare class DashboardService {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
+            date: Date;
             notes: string | null;
             status: import("@prisma/client").$Enums.AttendanceStatus;
-            date: Date;
             checkInTime: Date | null;
             checkInLat: import("@prisma/client-runtime-utils").Decimal | null;
             checkInLng: import("@prisma/client-runtime-utils").Decimal | null;

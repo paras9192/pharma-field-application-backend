@@ -18,7 +18,9 @@ export declare class VisitsController {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -75,7 +77,9 @@ export declare class VisitsController {
             doctor: {
                 id: string;
                 name: string;
+                email: string | null;
                 specialization: string | null;
+                clinicName: string | null;
             } | null;
             chemist: {
                 id: string;
@@ -131,7 +135,9 @@ export declare class VisitsController {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -180,7 +186,9 @@ export declare class VisitsController {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -229,7 +237,9 @@ export declare class VisitsController {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;
@@ -278,7 +288,9 @@ export declare class VisitsController {
         doctor: {
             id: string;
             name: string;
+            email: string | null;
             specialization: string | null;
+            clinicName: string | null;
         } | null;
         chemist: {
             id: string;

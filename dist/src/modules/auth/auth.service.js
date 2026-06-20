@@ -147,6 +147,32 @@ let AuthService = class AuthService {
         const { passwordHash, ...profile } = user;
         return profile;
     }
+    generateWelcomeToken(userId, email) {
+        return this.jwtService.sign({ sub: userId, email, type: 'set-password' }, {
+            secret: this.configService.get('JWT_SECRET'),
+            expiresIn: '24h',
+        });
+    }
+    async setPassword(token, newPassword) {
+        let payload;
+        try {
+            payload = this.jwtService.verify(token, {
+                secret: this.configService.get('JWT_SECRET'),
+            });
+        }
+        catch {
+            throw new common_1.ForbiddenException('Invalid or expired link. Please contact your admin.');
+        }
+        if (payload.type !== 'set-password') {
+            throw new common_1.ForbiddenException('Invalid token type');
+        }
+        const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        await this.prisma.user.update({ where: { id: payload.sub }, data: { passwordHash } });
+        return { message: 'Password set successfully. You can now log in.' };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

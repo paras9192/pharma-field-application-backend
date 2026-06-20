@@ -13,6 +13,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { VisitsModule } from './modules/visits/visits.module';
 import { DailyReportsModule } from './modules/daily-reports/daily-reports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     VisitsModule,
     DailyReportsModule,
     DashboardModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

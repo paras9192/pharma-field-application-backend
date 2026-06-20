@@ -22,6 +22,7 @@ const attendance_module_1 = require("./modules/attendance/attendance.module");
 const visits_module_1 = require("./modules/visits/visits.module");
 const daily_reports_module_1 = require("./modules/daily-reports/daily-reports.module");
 const dashboard_module_1 = require("./modules/dashboard/dashboard.module");
+const mail_module_1 = require("./mail/mail.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -40,6 +41,7 @@ exports.AppModule = AppModule = __decorate([
             visits_module_1.VisitsModule,
             daily_reports_module_1.DailyReportsModule,
             dashboard_module_1.DashboardModule,
+            mail_module_1.MailModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

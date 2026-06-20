@@ -114,4 +114,8 @@ export declare class AuthService {
         createdAt: Date;
         updatedAt: Date;
     }>;
+    generateWelcomeToken(userId: string, email: string): string;
+    setPassword(token: string, newPassword: string): Promise<{
+        message: string;
+    }>;
 }

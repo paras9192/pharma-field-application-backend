@@ -10,10 +10,11 @@ import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
+import { MailService } from '../../mail/mail.service';
 
 const VISIT_INCLUDE = {
   user: { select: { id: true, name: true, employeeCode: true } },
-  doctor: { select: { id: true, name: true, specialization: true } },
+  doctor: { select: { id: true, name: true, specialization: true, email: true, clinicName: true } },
   chemist: { select: { id: true, shopName: true, ownerName: true } },
   territory: { select: { id: true, name: true } },
   products: true,
@@ -21,7 +22,10 @@ const VISIT_INCLUDE = {
 
 @Injectable()
 export class VisitsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+  ) {}
 
   async create(userId: string, dto: CreateVisitDto) {
     if (dto.visitType === 'DOCTOR' && !dto.doctorId) {
@@ -33,7 +37,7 @@ export class VisitsService {
 
     const { products, visitDate, followUpDate, lat, lng, territoryId, ...rest } = dto;
 
-    return this.prisma.visit.create({
+    const visit = await this.prisma.visit.create({
       data: {
         ...rest,
         userId,
@@ -49,6 +53,12 @@ export class VisitsService {
       },
       include: VISIT_INCLUDE,
     });
+
+    this.mail.notifyVisit(visit);
+    if (visit.visitType === 'DOCTOR') {
+      this.mail.notifyDoctor(visit);
+    }
+    return visit;
   }
 
   async findAll(

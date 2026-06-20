@@ -13,6 +13,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -75,8 +76,12 @@ export class UsersController {
 
   @Post(':id/reset-password')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiOperation({ summary: 'Admin: reset a user password' })
-  resetPassword(@Param('id') id: string, @Body('password') password: string) {
-    return this.usersService.adminResetPassword(id, password);
+  @ApiOperation({ summary: 'Admin: reset a user password (Admin cannot reset Super Admin password)' })
+  resetPassword(
+    @Param('id') id: string,
+    @Body() dto: AdminResetPasswordDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.usersService.adminResetPassword(id, dto.password, currentUser);
   }
 }

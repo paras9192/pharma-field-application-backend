@@ -11,10 +11,14 @@ import { CreateDailyReportDto } from './dto/create-daily-report.dto';
 import { UpdateDailyReportDto } from './dto/update-daily-report.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
+import { MailService } from '../../mail/mail.service';
 
 @Injectable()
 export class DailyReportsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+  ) {}
 
   private async computeVisitCounts(userId: string, date: Date) {
     const start = dayjs(date).startOf('day').toDate();
@@ -39,7 +43,7 @@ export class DailyReportsService {
 
     const counts = await this.computeVisitCounts(userId, date);
 
-    return this.prisma.dailyReport.create({
+    const report = await this.prisma.dailyReport.create({
       data: {
         userId,
         date,
@@ -54,6 +58,9 @@ export class DailyReportsService {
       },
       include: { user: { select: { id: true, name: true } } },
     });
+
+    this.mail.notifyDailyReport(report);
+    return report;
   }
 
   async update(id: string, dto: UpdateDailyReportDto, currentUser: any) {
@@ -101,11 +108,14 @@ export class DailyReportsService {
 
     const counts = await this.computeVisitCounts(report.userId, report.date);
 
-    return this.prisma.dailyReport.update({
+    const submitted = await this.prisma.dailyReport.update({
       where: { id },
       data: { status: 'SUBMITTED', submittedAt: new Date(), ...counts },
       include: { user: { select: { id: true, name: true } } },
     });
+
+    this.mail.notifyDailyReport(submitted);
+    return submitted;
   }
 
   async findAll(

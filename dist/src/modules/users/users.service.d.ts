@@ -4,9 +4,13 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
+import { AuthService } from '../auth/auth.service';
+import { MailService } from '../../mail/mail.service';
 export declare class UsersService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private authService;
+    private mail;
+    constructor(prisma: PrismaService, authService: AuthService, mail: MailService);
     create(dto: CreateUserDto, createdById: string): Promise<{
         id: string;
         name: string;
@@ -160,7 +164,7 @@ export declare class UsersService {
     changePassword(userId: string, dto: ChangePasswordDto): Promise<{
         message: string;
     }>;
-    adminResetPassword(userId: string, newPassword: string): Promise<{
+    adminResetPassword(userId: string, newPassword: string, currentUser: any): Promise<{
         message: string;
     }>;
 }

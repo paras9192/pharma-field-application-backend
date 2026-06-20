@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -11,6 +12,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
+import { AuthService } from '../auth/auth.service';
+import { MailService } from '../../mail/mail.service';
 
 const USER_SELECT = {
   id: true,
@@ -29,7 +32,11 @@ const USER_SELECT = {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private authService: AuthService,
+    private mail: MailService,
+  ) {}
 
   async create(dto: CreateUserDto, createdById: string) {
     const [roleRecord, existingEmail, existingPhone] = await Promise.all([
@@ -64,6 +71,9 @@ export class UsersService {
       },
       select: USER_SELECT,
     });
+
+    const token = this.authService.generateWelcomeToken(user.id, user.email);
+    this.mail.sendWelcomeEmail(user, token);
 
     return user;
   }
@@ -168,8 +178,14 @@ export class UsersService {
     return { message: 'Password changed successfully' };
   }
 
-  async adminResetPassword(userId: string, newPassword: string) {
-    await this.findOne(userId);
+  async adminResetPassword(userId: string, newPassword: string, currentUser: any) {
+    const target = await this.findOne(userId);
+    if (
+      currentUser.role.name === Role.ADMIN &&
+      target.role?.name === Role.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException('Admins cannot reset a Super Admin password');
+    }
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
     return { message: 'Password reset successfully' };

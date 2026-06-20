@@ -1,6 +1,7 @@
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 export declare class AuthController {
     private authService;
     constructor(authService: AuthService);
@@ -90,5 +91,8 @@ export declare class AuthController {
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    setPassword(dto: SetPasswordDto): Promise<{
+        message: string;
     }>;
 }

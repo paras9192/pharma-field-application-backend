@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -116,5 +117,38 @@ export class AuthService {
 
     const { passwordHash, ...profile } = user;
     return profile;
+  }
+
+  generateWelcomeToken(userId: string, email: string): string {
+    return this.jwtService.sign(
+      { sub: userId, email, type: 'set-password' },
+      {
+        secret: this.configService.get('JWT_SECRET'),
+        expiresIn: '24h',
+      },
+    );
+  }
+
+  async setPassword(token: string, newPassword: string) {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(token, {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+    } catch {
+      throw new ForbiddenException('Invalid or expired link. Please contact your admin.');
+    }
+
+    if (payload.type !== 'set-password') {
+      throw new ForbiddenException('Invalid token type');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) throw new BadRequestException('User not found');
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({ where: { id: payload.sub }, data: { passwordHash } });
+
+    return { message: 'Password set successfully. You can now log in.' };
   }
 }

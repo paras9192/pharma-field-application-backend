@@ -2,6 +2,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { Role } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 export declare class UsersController {
@@ -160,7 +161,7 @@ export declare class UsersController {
     changePassword(userId: string, dto: ChangePasswordDto): Promise<{
         message: string;
     }>;
-    resetPassword(id: string, password: string): Promise<{
+    resetPassword(id: string, dto: AdminResetPasswordDto, currentUser: any): Promise<{
         message: string;
     }>;
 }

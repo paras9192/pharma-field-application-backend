@@ -2,9 +2,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDailyReportDto } from './dto/create-daily-report.dto';
 import { UpdateDailyReportDto } from './dto/update-daily-report.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { MailService } from '../../mail/mail.service';
 export declare class DailyReportsService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private mail;
+    constructor(prisma: PrismaService, mail: MailService);
     private computeVisitCounts;
     create(userId: string, dto: CreateDailyReportDto): Promise<{
         user: {
@@ -16,8 +18,8 @@ export declare class DailyReportsService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        status: import("@prisma/client").$Enums.ReportStatus;
         date: Date;
+        status: import("@prisma/client").$Enums.ReportStatus;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -38,8 +40,8 @@ export declare class DailyReportsService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        status: import("@prisma/client").$Enums.ReportStatus;
         date: Date;
+        status: import("@prisma/client").$Enums.ReportStatus;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -60,8 +62,8 @@ export declare class DailyReportsService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        status: import("@prisma/client").$Enums.ReportStatus;
         date: Date;
+        status: import("@prisma/client").$Enums.ReportStatus;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -88,8 +90,8 @@ export declare class DailyReportsService {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            status: import("@prisma/client").$Enums.ReportStatus;
             date: Date;
+            status: import("@prisma/client").$Enums.ReportStatus;
             productsDiscussed: string | null;
             competitorActivity: string | null;
             highlights: string | null;
@@ -117,8 +119,8 @@ export declare class DailyReportsService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        status: import("@prisma/client").$Enums.ReportStatus;
         date: Date;
+        status: import("@prisma/client").$Enums.ReportStatus;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -139,8 +141,8 @@ export declare class DailyReportsService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        status: import("@prisma/client").$Enums.ReportStatus;
         date: Date;
+        status: import("@prisma/client").$Enums.ReportStatus;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;

@@ -18,10 +18,13 @@ const dayjs_1 = __importDefault(require("dayjs"));
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const role_enum_1 = require("../../common/enums/role.enum");
+const mail_service_1 = require("../../mail/mail.service");
 let DailyReportsService = class DailyReportsService {
     prisma;
-    constructor(prisma) {
+    mail;
+    constructor(prisma, mail) {
         this.prisma = prisma;
+        this.mail = mail;
     }
     async computeVisitCounts(userId, date) {
         const start = (0, dayjs_1.default)(date).startOf('day').toDate();
@@ -41,7 +44,7 @@ let DailyReportsService = class DailyReportsService {
         if (existing)
             throw new common_1.ConflictException('Report for this date already exists. Use update instead.');
         const counts = await this.computeVisitCounts(userId, date);
-        return this.prisma.dailyReport.create({
+        const report = await this.prisma.dailyReport.create({
             data: {
                 userId,
                 date,
@@ -56,6 +59,8 @@ let DailyReportsService = class DailyReportsService {
             },
             include: { user: { select: { id: true, name: true } } },
         });
+        this.mail.notifyDailyReport(report);
+        return report;
     }
     async update(id, dto, currentUser) {
         const report = await this.prisma.dailyReport.findUnique({ where: { id } });
@@ -91,11 +96,13 @@ let DailyReportsService = class DailyReportsService {
             throw new common_1.BadRequestException('Report already submitted');
         }
         const counts = await this.computeVisitCounts(report.userId, report.date);
-        return this.prisma.dailyReport.update({
+        const submitted = await this.prisma.dailyReport.update({
             where: { id },
             data: { status: 'SUBMITTED', submittedAt: new Date(), ...counts },
             include: { user: { select: { id: true, name: true } } },
         });
+        this.mail.notifyDailyReport(submitted);
+        return submitted;
     }
     async findAll(query, currentUser) {
         const { page = 1, limit = 20, from, to, status } = query;
@@ -152,6 +159,7 @@ let DailyReportsService = class DailyReportsService {
 exports.DailyReportsService = DailyReportsService;
 exports.DailyReportsService = DailyReportsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        mail_service_1.MailService])
 ], DailyReportsService);
 //# sourceMappingURL=daily-reports.service.js.map

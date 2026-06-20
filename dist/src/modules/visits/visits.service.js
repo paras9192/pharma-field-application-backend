@@ -18,17 +18,20 @@ const dayjs_1 = __importDefault(require("dayjs"));
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const role_enum_1 = require("../../common/enums/role.enum");
+const mail_service_1 = require("../../mail/mail.service");
 const VISIT_INCLUDE = {
     user: { select: { id: true, name: true, employeeCode: true } },
-    doctor: { select: { id: true, name: true, specialization: true } },
+    doctor: { select: { id: true, name: true, specialization: true, email: true, clinicName: true } },
     chemist: { select: { id: true, shopName: true, ownerName: true } },
     territory: { select: { id: true, name: true } },
     products: true,
 };
 let VisitsService = class VisitsService {
     prisma;
-    constructor(prisma) {
+    mail;
+    constructor(prisma, mail) {
         this.prisma = prisma;
+        this.mail = mail;
     }
     async create(userId, dto) {
         if (dto.visitType === 'DOCTOR' && !dto.doctorId) {
@@ -38,7 +41,7 @@ let VisitsService = class VisitsService {
             throw new common_1.BadRequestException('chemistId is required for chemist visits');
         }
         const { products, visitDate, followUpDate, lat, lng, territoryId, ...rest } = dto;
-        return this.prisma.visit.create({
+        const visit = await this.prisma.visit.create({
             data: {
                 ...rest,
                 userId,
@@ -54,6 +57,11 @@ let VisitsService = class VisitsService {
             },
             include: VISIT_INCLUDE,
         });
+        this.mail.notifyVisit(visit);
+        if (visit.visitType === 'DOCTOR') {
+            this.mail.notifyDoctor(visit);
+        }
+        return visit;
     }
     async findAll(query, currentUser) {
         const { page = 1, limit = 20, search, visitType, from, to, territoryId, followUpPending } = query;
@@ -161,6 +169,7 @@ let VisitsService = class VisitsService {
 exports.VisitsService = VisitsService;
 exports.VisitsService = VisitsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        mail_service_1.MailService])
 ], VisitsService);
 //# sourceMappingURL=visits.service.js.map
