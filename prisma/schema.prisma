@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum RoleName {
+  SUPER_ADMIN
+  ADMIN
+  MR
+  SALES_PERSON
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+}
+
+enum VisitType {
+  DOCTOR
+  CHEMIST
+}
+
+enum VisitStatus {
+  COMPLETED
+  CANCELLED
+  PENDING
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+}
+
+// ─── Auth & Users ─────────────────────────────────────────────────────────────
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        RoleName @unique
+  description String?
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String    @unique
+  passwordHash  String    @map("password_hash")
+  roleId        Int       @map("role_id")
+  role          Role      @relation(fields: [roleId], references: [id])
+  employeeCode  String?   @unique @map("employee_code")
+  profilePhoto  String?   @map("profile_photo")
+  dateOfJoining DateTime? @map("date_of_joining") @db.Date
+  isActive      Boolean   @default(true) @map("is_active")
+  createdById   String?   @map("created_by")
+  createdBy     User?     @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdUsers  User[]    @relation("CreatedByUser")
+
+  refreshTokens       RefreshToken[]
+  employeeTerritories EmployeeTerritory[]
+  attendance          Attendance[]
+  visits              Visit[]
+  dailyReports        DailyReport[]
+  doctorsAdded        Doctor[]
+  chemistsAdded       Chemist[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}
+
+// ─── Territory Hierarchy ──────────────────────────────────────────────────────
+
+model State {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  code      String     @unique
+  districts District[]
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("states")
+}
+
+model District {
+  id        Int      @id @default(autoincrement())
+  name      String
+  stateId   Int      @map("state_id")
+  state     State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  cities    City[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([name, stateId])
+  @@map("districts")
+}
+
+model City {
+  id          Int         @id @default(autoincrement())
+  name        String
+  districtId  Int         @map("district_id")
+  district    District    @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  territories Territory[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  @@unique([name, districtId])
+  @@map("cities")
+}
+
+model Territory {
+  id          Int     @id @default(autoincrement())
+  name        String
+  code        String? @unique
+  cityId      Int     @map("city_id")
+  city        City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+
+  employeeTerritories EmployeeTerritory[]
+  doctors             Doctor[]
+  chemists            Chemist[]
+  visits              Visit[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("territories")
+}
+
+model EmployeeTerritory {
+  id           Int       @id @default(autoincrement())
+  userId       String    @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  territoryId  Int       @map("territory_id")
+  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime  @default(now()) @map("assigned_at")
+  assignedById String?   @map("assigned_by")
+
+  @@unique([userId, territoryId])
+  @@map("employee_territories")
+}
+
+// ─── Doctors & Chemists ───────────────────────────────────────────────────────
+
+model Doctor {
+  id             String     @id @default(uuid())
+  name           String
+  specialization String?
+  clinicName     String?    @map("clinic_name")
+  hospitalName   String?    @map("hospital_name")
+  phone          String?
+  alternatePhone String?    @map("alternate_phone")
+  email          String?
+  address        String?
+  territoryId    Int?       @map("territory_id")
+  territory      Territory? @relation(fields: [territoryId], references: [id])
+  addedById      String?    @map("added_by")
+  addedBy        User?      @relation(fields: [addedById], references: [id])
+  isActive       Boolean    @default(true) @map("is_active")
+  visits         Visit[]
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@map("doctors")
+}
+
+model Chemist {
+  id             String     @id @default(uuid())
+  shopName       String     @map("shop_name")
+  ownerName      String     @map("owner_name")
+  phone          String
+  alternatePhone String?    @map("alternate_phone")
+  email          String?
+  gstNumber      String?    @map("gst_number")
+  address        String?
+  territoryId    Int?       @map("territory_id")
+  territory      Territory? @relation(fields: [territoryId], references: [id])
+  addedById      String?    @map("added_by")
+  addedBy        User?      @relation(fields: [addedById], references: [id])
+  isActive       Boolean    @default(true) @map("is_active")
+  visits         Visit[]
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@map("chemists")
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+model Attendance {
+  id              String           @id @default(uuid())
+  userId          String           @map("user_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime         @db.Date
+  checkInTime     DateTime?        @map("check_in_time")
+  checkInLat      Decimal?         @map("check_in_lat") @db.Decimal(10, 7)
+  checkInLng      Decimal?         @map("check_in_lng") @db.Decimal(10, 7)
+  checkInAddress  String?          @map("check_in_address")
+  checkOutTime    DateTime?        @map("check_out_time")
+  checkOutLat     Decimal?         @map("check_out_lat") @db.Decimal(10, 7)
+  checkOutLng     Decimal?         @map("check_out_lng") @db.Decimal(10, 7)
+  checkOutAddress String?          @map("check_out_address")
+  workingHours    Decimal?         @map("working_hours") @db.Decimal(5, 2)
+  status          AttendanceStatus @default(PRESENT)
+  notes           String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@map("attendance")
+}
+
+// ─── Visits ───────────────────────────────────────────────────────────────────
+
+model Visit {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  user            User        @relation(fields: [userId], references: [id])
+  visitType       VisitType   @map("visit_type")
+  doctorId        String?     @map("doctor_id")
+  doctor          Doctor?     @relation(fields: [doctorId], references: [id])
+  chemistId       String?     @map("chemist_id")
+  chemist         Chemist?    @relation(fields: [chemistId], references: [id])
+  territoryId     Int?        @map("territory_id")
+  territory       Territory?  @relation(fields: [territoryId], references: [id])
+  visitDate       DateTime    @map("visit_date") @db.Date
+  visitTime       DateTime    @map("visit_time")
+  lat             Decimal?    @db.Decimal(10, 7)
+  lng             Decimal?    @db.Decimal(10, 7)
+  locationAddress String?     @map("location_address")
+  purpose         String?
+  notes           String?
+  followUpDate    DateTime?   @map("follow_up_date") @db.Date
+  followUpNotes   String?     @map("follow_up_notes")
+  followUpDone    Boolean     @default(false) @map("follow_up_done")
+  status          VisitStatus @default(COMPLETED)
+  products        VisitProduct[]
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@map("visits")
+}
+
+model VisitProduct {
+  id          Int      @id @default(autoincrement())
+  visitId     String   @map("visit_id")
+  visit       Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  productName String   @map("product_name")
+  details     String?
+  quantity    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("visit_products")
+}
+
+// ─── Daily Working Reports ────────────────────────────────────────────────────
+
+model DailyReport {
+  id                 String       @id @default(uuid())
+  userId             String       @map("user_id")
+  user               User         @relation(fields: [userId], references: [id])
+  date               DateTime     @db.Date
+  totalVisits        Int          @default(0) @map("total_visits")
+  doctorVisits       Int          @default(0) @map("doctor_visits")
+  chemistVisits      Int          @default(0) @map("chemist_visits")
+  productsDiscussed  String?      @map("products_discussed")
+  competitorActivity String?      @map("competitor_activity")
+  highlights         String?
+  challenges         String?
+  remarks            String?
+  status             ReportStatus @default(DRAFT)
+  submittedAt        DateTime?    @map("submitted_at")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@map("daily_reports")
+}
