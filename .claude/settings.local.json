@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(which claude *)",
-      "Read(//usr/local/bin/**)"
+      "Read(//usr/local/bin/**)",
+      "Bash(npx tsc *)",
+      "Bash(npx prisma *)",
+      "Bash(docker compose *)",
+      "Bash(pg_isready -h localhost -p 5432)",
+      "Bash(brew services *)",
+      "Bash(psql postgres *)",
+      "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\(Object.keys\\(p\\).slice\\(0,10\\)\\)\")"
     ]
   }
 }

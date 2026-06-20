@@ -1,9 +1,34 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { TerritoriesModule } from './modules/territories/territories.module';
+import { DoctorsModule } from './modules/doctors/doctors.module';
+import { ChemistsModule } from './modules/chemists/chemists.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { VisitsModule } from './modules/visits/visits.module';
+import { DailyReportsModule } from './modules/daily-reports/daily-reports.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    TerritoriesModule,
+    DoctorsModule,
+    ChemistsModule,
+    AttendanceModule,
+    VisitsModule,
+    DailyReportsModule,
+    DashboardModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
