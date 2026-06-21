@@ -261,10 +261,10 @@ export declare class TerritoriesController {
         };
     } & {
         id: number;
-        userId: string;
         territoryId: number;
-        assignedAt: Date;
+        userId: string;
         assignedById: string | null;
+        assignedAt: Date;
     }>;
     unassignTerritory(userId: string, territoryId: number): Promise<{
         message: string;
@@ -303,10 +303,10 @@ export declare class TerritoriesController {
         };
     } & {
         id: number;
-        userId: string;
         territoryId: number;
-        assignedAt: Date;
+        userId: string;
         assignedById: string | null;
+        assignedAt: Date;
     })[]>;
     findOneTerritory(id: number): Promise<{
         employeeTerritories: ({
@@ -322,10 +322,10 @@ export declare class TerritoriesController {
             };
         } & {
             id: number;
-            userId: string;
             territoryId: number;
-            assignedAt: Date;
+            userId: string;
             assignedById: string | null;
+            assignedAt: Date;
         })[];
         city: {
             district: {

@@ -14,6 +14,9 @@ import { VisitsModule } from './modules/visits/visits.module';
 import { DailyReportsModule } from './modules/daily-reports/daily-reports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { BillsModule } from './modules/bills/bills.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { MailModule } from './mail/mail.module';
     DailyReportsModule,
     DashboardModule,
     MailModule,
+    OrdersModule,
+    BillsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

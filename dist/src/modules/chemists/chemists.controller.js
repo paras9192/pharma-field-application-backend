@@ -31,8 +31,8 @@ let ChemistsController = class ChemistsController {
     create(dto, userId) {
         return this.chemistsService.create(dto, userId);
     }
-    findAll(query) {
-        return this.chemistsService.findAll(query);
+    findAll(query, currentUser) {
+        return this.chemistsService.findAll(query, currentUser);
     }
     findOne(id) {
         return this.chemistsService.findOne(id);
@@ -56,10 +56,11 @@ __decorate([
 ], ChemistsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'List chemists with search and filters' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List chemists (SALES_PERSON sees only their assigned chemists)' }),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], ChemistsController.prototype, "findAll", null);
 __decorate([

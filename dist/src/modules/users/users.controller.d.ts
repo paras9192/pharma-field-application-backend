@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
+import { AssignChemistsDto } from './dto/assign-chemists.dto';
 import { Role } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 export declare class UsersController {
@@ -112,10 +113,10 @@ export declare class UsersController {
             };
         } & {
             id: number;
-            userId: string;
             territoryId: number;
-            assignedAt: Date;
+            userId: string;
             assignedById: string | null;
+            assignedAt: Date;
         })[];
     }>;
     update(id: string, dto: UpdateUserDto): Promise<{
@@ -162,6 +163,59 @@ export declare class UsersController {
         message: string;
     }>;
     resetPassword(id: string, dto: AdminResetPasswordDto, currentUser: any): Promise<{
+        message: string;
+    }>;
+    getAssignedChemists(id: string): Promise<({
+        chemist: {
+            id: string;
+            phone: string;
+            isActive: boolean;
+            territory: {
+                id: number;
+                name: string;
+            } | null;
+            shopName: string;
+            ownerName: string;
+            gstNumber: string | null;
+            address: string | null;
+        };
+        assignedBy: {
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: number;
+        userId: string;
+        chemistId: string;
+        assignedById: string | null;
+        assignedAt: Date;
+    })[]>;
+    assignChemists(id: string, dto: AssignChemistsDto, adminId: string): Promise<({
+        chemist: {
+            id: string;
+            phone: string;
+            isActive: boolean;
+            territory: {
+                id: number;
+                name: string;
+            } | null;
+            shopName: string;
+            ownerName: string;
+            gstNumber: string | null;
+            address: string | null;
+        };
+        assignedBy: {
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: number;
+        userId: string;
+        chemistId: string;
+        assignedById: string | null;
+        assignedAt: Date;
+    })[]>;
+    unassignChemist(id: string, chemistId: string): Promise<{
         message: string;
     }>;
 }

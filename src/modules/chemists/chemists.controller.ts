@@ -24,9 +24,12 @@ export class ChemistsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List chemists with search and filters' })
-  findAll(@Query() query: PaginationDto & { territoryId?: number; isActive?: string }) {
-    return this.chemistsService.findAll(query);
+  @ApiOperation({ summary: 'List chemists (SALES_PERSON sees only their assigned chemists)' })
+  findAll(
+    @Query() query: PaginationDto & { territoryId?: number; isActive?: string },
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.chemistsService.findAll(query, currentUser);
   }
 
   @Get(':id')

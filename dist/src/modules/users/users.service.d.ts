@@ -115,10 +115,10 @@ export declare class UsersService {
             };
         } & {
             id: number;
-            userId: string;
             territoryId: number;
-            assignedAt: Date;
+            userId: string;
             assignedById: string | null;
+            assignedAt: Date;
         })[];
     }>;
     update(id: string, dto: UpdateUserDto): Promise<{
@@ -162,6 +162,59 @@ export declare class UsersService {
         } | null;
     }>;
     changePassword(userId: string, dto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
+    getAssignedChemists(userId: string): Promise<({
+        chemist: {
+            id: string;
+            phone: string;
+            isActive: boolean;
+            territory: {
+                id: number;
+                name: string;
+            } | null;
+            shopName: string;
+            ownerName: string;
+            gstNumber: string | null;
+            address: string | null;
+        };
+        assignedBy: {
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: number;
+        userId: string;
+        chemistId: string;
+        assignedById: string | null;
+        assignedAt: Date;
+    })[]>;
+    assignChemists(userId: string, chemistIds: string[], assignedById: string): Promise<({
+        chemist: {
+            id: string;
+            phone: string;
+            isActive: boolean;
+            territory: {
+                id: number;
+                name: string;
+            } | null;
+            shopName: string;
+            ownerName: string;
+            gstNumber: string | null;
+            address: string | null;
+        };
+        assignedBy: {
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: number;
+        userId: string;
+        chemistId: string;
+        assignedById: string | null;
+        assignedAt: Date;
+    })[]>;
+    unassignChemist(userId: string, chemistId: string): Promise<{
         message: string;
     }>;
     adminResetPassword(userId: string, newPassword: string, currentUser: any): Promise<{

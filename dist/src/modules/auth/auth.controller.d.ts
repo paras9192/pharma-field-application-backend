@@ -74,10 +74,10 @@ export declare class AuthController {
             };
         } & {
             id: number;
-            userId: string;
             territoryId: number;
-            assignedAt: Date;
+            userId: string;
             assignedById: string | null;
+            assignedAt: Date;
         })[];
         id: string;
         name: string;

@@ -3,10 +3,29 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateChemistDto } from './dto/create-chemist.dto';
 import { UpdateChemistDto } from './dto/update-chemist.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
+import { Role } from '../../common/enums/role.enum';
 
 @Injectable()
 export class ChemistsService {
   constructor(private prisma: PrismaService) {}
+
+  async getAssignedChemistIds(userId: string): Promise<string[]> {
+    const rows = await this.prisma.salesPersonChemist.findMany({
+      where: { userId },
+      select: { chemistId: true },
+    });
+    return rows.map((r) => r.chemistId);
+  }
+
+  private withAssignedSalesPerson<T extends { salesPersons?: { user: { id: string; name: string } }[] }>(
+    chemist: T,
+  ) {
+    const { salesPersons, ...rest } = chemist as any;
+    return {
+      ...rest,
+      assignedSalesPerson: salesPersons?.[0]?.user ?? null,
+    };
+  }
 
   async create(dto: CreateChemistDto, addedById: string) {
     return this.prisma.chemist.create({
@@ -15,11 +34,20 @@ export class ChemistsService {
     });
   }
 
-  async findAll(query: PaginationDto & { territoryId?: number; isActive?: string }) {
+  async findAll(
+    query: PaginationDto & { territoryId?: number; isActive?: string },
+    currentUser?: any,
+  ) {
     const { page = 1, limit = 20, search, territoryId, isActive } = query;
     const { skip, take } = paginate(page, limit);
 
     const where: any = {};
+
+    if (currentUser?.role?.name === Role.SALES_PERSON) {
+      const assignedIds = await this.getAssignedChemistIds(currentUser.id);
+      where.id = { in: assignedIds };
+    }
+
     if (search) {
       where.OR = [
         { shopName: { contains: search, mode: 'insensitive' } },
@@ -39,13 +67,14 @@ export class ChemistsService {
         include: {
           territory: true,
           addedBy: { select: { id: true, name: true } },
+          salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
         },
         orderBy: { shopName: 'asc' },
       }),
       this.prisma.chemist.count({ where }),
     ]);
 
-    return buildPaginatedResponse(data, total, page, limit);
+    return buildPaginatedResponse(data.map((c) => this.withAssignedSalesPerson(c)), total, page, limit);
   }
 
   async findOne(id: string) {
@@ -54,6 +83,7 @@ export class ChemistsService {
       include: {
         territory: { include: { city: { include: { district: { include: { state: true } } } } } },
         addedBy: { select: { id: true, name: true } },
+        salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
         visits: {
           orderBy: { visitDate: 'desc' },
           take: 10,
@@ -62,7 +92,7 @@ export class ChemistsService {
       },
     });
     if (!chemist) throw new NotFoundException('Chemist not found');
-    return chemist;
+    return this.withAssignedSalesPerson(chemist);
   }
 
   async update(id: string, dto: UpdateChemistDto) {

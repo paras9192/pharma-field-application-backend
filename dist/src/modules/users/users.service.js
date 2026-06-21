@@ -198,6 +198,54 @@ let UsersService = class UsersService {
         await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
         return { message: 'Password changed successfully' };
     }
+    async getAssignedChemists(userId) {
+        await this.findOne(userId);
+        return this.prisma.salesPersonChemist.findMany({
+            where: { userId },
+            include: {
+                chemist: {
+                    select: {
+                        id: true, shopName: true, ownerName: true, phone: true,
+                        address: true, gstNumber: true, isActive: true,
+                        territory: { select: { id: true, name: true } },
+                    },
+                },
+                assignedBy: { select: { id: true, name: true } },
+            },
+            orderBy: { assignedAt: 'desc' },
+        });
+    }
+    async assignChemists(userId, chemistIds, assignedById) {
+        const user = await this.findOne(userId);
+        if (user.role?.name !== role_enum_1.Role.SALES_PERSON) {
+            throw new common_1.BadRequestException('Chemists can only be assigned to SALES_PERSON role users');
+        }
+        const chemists = await this.prisma.chemist.findMany({
+            where: { id: { in: chemistIds } },
+            select: { id: true, shopName: true },
+        });
+        if (chemists.length !== chemistIds.length) {
+            throw new common_1.NotFoundException('One or more chemist IDs not found');
+        }
+        await this.prisma.salesPersonChemist.deleteMany({
+            where: { chemistId: { in: chemistIds } },
+        });
+        await this.prisma.salesPersonChemist.createMany({
+            data: chemistIds.map((chemistId) => ({ userId, chemistId, assignedById })),
+        });
+        return this.getAssignedChemists(userId);
+    }
+    async unassignChemist(userId, chemistId) {
+        const record = await this.prisma.salesPersonChemist.findUnique({
+            where: { userId_chemistId: { userId, chemistId } },
+        });
+        if (!record)
+            throw new common_1.NotFoundException('Assignment not found');
+        await this.prisma.salesPersonChemist.delete({
+            where: { userId_chemistId: { userId, chemistId } },
+        });
+        return { message: 'Chemist unassigned successfully' };
+    }
     async adminResetPassword(userId, newPassword, currentUser) {
         const target = await this.findOne(userId);
         if (currentUser.role.name === role_enum_1.Role.ADMIN &&

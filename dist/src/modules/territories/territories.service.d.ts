@@ -205,10 +205,10 @@ export declare class TerritoriesService {
             };
         } & {
             id: number;
-            userId: string;
             territoryId: number;
-            assignedAt: Date;
+            userId: string;
             assignedById: string | null;
+            assignedAt: Date;
         })[];
         city: {
             district: {
@@ -312,10 +312,10 @@ export declare class TerritoriesService {
         };
     } & {
         id: number;
-        userId: string;
         territoryId: number;
-        assignedAt: Date;
+        userId: string;
         assignedById: string | null;
+        assignedAt: Date;
     }>;
     unassignTerritory(userId: string, territoryId: number): Promise<{
         message: string;
@@ -354,10 +354,10 @@ export declare class TerritoriesService {
         };
     } & {
         id: number;
-        userId: string;
         territoryId: number;
-        assignedAt: Date;
+        userId: string;
         assignedById: string | null;
+        assignedAt: Date;
     })[]>;
     getFullHierarchy(): Promise<({
         districts: ({

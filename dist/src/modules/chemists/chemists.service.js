@@ -13,10 +13,25 @@ exports.ChemistsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
+const role_enum_1 = require("../../common/enums/role.enum");
 let ChemistsService = class ChemistsService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
+    }
+    async getAssignedChemistIds(userId) {
+        const rows = await this.prisma.salesPersonChemist.findMany({
+            where: { userId },
+            select: { chemistId: true },
+        });
+        return rows.map((r) => r.chemistId);
+    }
+    withAssignedSalesPerson(chemist) {
+        const { salesPersons, ...rest } = chemist;
+        return {
+            ...rest,
+            assignedSalesPerson: salesPersons?.[0]?.user ?? null,
+        };
     }
     async create(dto, addedById) {
         return this.prisma.chemist.create({
@@ -24,10 +39,14 @@ let ChemistsService = class ChemistsService {
             include: { territory: true, addedBy: { select: { id: true, name: true } } },
         });
     }
-    async findAll(query) {
+    async findAll(query, currentUser) {
         const { page = 1, limit = 20, search, territoryId, isActive } = query;
         const { skip, take } = (0, pagination_dto_1.paginate)(page, limit);
         const where = {};
+        if (currentUser?.role?.name === role_enum_1.Role.SALES_PERSON) {
+            const assignedIds = await this.getAssignedChemistIds(currentUser.id);
+            where.id = { in: assignedIds };
+        }
         if (search) {
             where.OR = [
                 { shopName: { contains: search, mode: 'insensitive' } },
@@ -48,12 +67,13 @@ let ChemistsService = class ChemistsService {
                 include: {
                     territory: true,
                     addedBy: { select: { id: true, name: true } },
+                    salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
                 },
                 orderBy: { shopName: 'asc' },
             }),
             this.prisma.chemist.count({ where }),
         ]);
-        return (0, pagination_dto_1.buildPaginatedResponse)(data, total, page, limit);
+        return (0, pagination_dto_1.buildPaginatedResponse)(data.map((c) => this.withAssignedSalesPerson(c)), total, page, limit);
     }
     async findOne(id) {
         const chemist = await this.prisma.chemist.findUnique({
@@ -61,6 +81,7 @@ let ChemistsService = class ChemistsService {
             include: {
                 territory: { include: { city: { include: { district: { include: { state: true } } } } } },
                 addedBy: { select: { id: true, name: true } },
+                salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
                 visits: {
                     orderBy: { visitDate: 'desc' },
                     take: 10,
@@ -70,7 +91,7 @@ let ChemistsService = class ChemistsService {
         });
         if (!chemist)
             throw new common_1.NotFoundException('Chemist not found');
-        return chemist;
+        return this.withAssignedSalesPerson(chemist);
     }
     async update(id, dto) {
         await this.findOne(id);

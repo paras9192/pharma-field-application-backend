@@ -15,8 +15,8 @@ export declare class DailyReportsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        date: Date;
         status: import("@prisma/client").$Enums.ReportStatus;
+        date: Date;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -43,8 +43,8 @@ export declare class DailyReportsController {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            date: Date;
             status: import("@prisma/client").$Enums.ReportStatus;
+            date: Date;
             productsDiscussed: string | null;
             competitorActivity: string | null;
             highlights: string | null;
@@ -72,8 +72,8 @@ export declare class DailyReportsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        date: Date;
         status: import("@prisma/client").$Enums.ReportStatus;
+        date: Date;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -94,8 +94,8 @@ export declare class DailyReportsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        date: Date;
         status: import("@prisma/client").$Enums.ReportStatus;
+        date: Date;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -116,8 +116,8 @@ export declare class DailyReportsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        date: Date;
         status: import("@prisma/client").$Enums.ReportStatus;
+        date: Date;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;
@@ -138,8 +138,8 @@ export declare class DailyReportsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        date: Date;
         status: import("@prisma/client").$Enums.ReportStatus;
+        date: Date;
         productsDiscussed: string | null;
         competitorActivity: string | null;
         highlights: string | null;

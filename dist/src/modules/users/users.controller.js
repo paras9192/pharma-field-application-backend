@@ -20,6 +20,7 @@ const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const change_password_dto_1 = require("./dto/change-password.dto");
 const admin_reset_password_dto_1 = require("./dto/admin-reset-password.dto");
+const assign_chemists_dto_1 = require("./dto/assign-chemists.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
@@ -50,6 +51,15 @@ let UsersController = class UsersController {
     }
     resetPassword(id, dto, currentUser) {
         return this.usersService.adminResetPassword(id, dto.password, currentUser);
+    }
+    getAssignedChemists(id) {
+        return this.usersService.getAssignedChemists(id);
+    }
+    assignChemists(id, dto, adminId) {
+        return this.usersService.assignChemists(id, dto.chemistIds, adminId);
+    }
+    unassignChemist(id, chemistId) {
+        return this.usersService.unassignChemist(id, chemistId);
     }
 };
 exports.UsersController = UsersController;
@@ -122,6 +132,36 @@ __decorate([
     __metadata("design:paramtypes", [String, admin_reset_password_dto_1.AdminResetPasswordDto, Object]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Get)(':id/assigned-chemists'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'List chemists assigned to a sales person' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "getAssignedChemists", null);
+__decorate([
+    (0, common_1.Post)(':id/assigned-chemists'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Assign one or more chemists to a sales person' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, assign_chemists_dto_1.AssignChemistsDto, String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "assignChemists", null);
+__decorate([
+    (0, common_1.Delete)(':id/assigned-chemists/:chemistId'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Remove a chemist assignment from a sales person' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('chemistId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "unassignChemist", null);
 exports.UsersController = UsersController = __decorate([
     (0, swagger_1.ApiTags)('Users'),
     (0, swagger_1.ApiBearerAuth)(),

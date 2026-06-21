@@ -23,6 +23,9 @@ const visits_module_1 = require("./modules/visits/visits.module");
 const daily_reports_module_1 = require("./modules/daily-reports/daily-reports.module");
 const dashboard_module_1 = require("./modules/dashboard/dashboard.module");
 const mail_module_1 = require("./mail/mail.module");
+const orders_module_1 = require("./modules/orders/orders.module");
+const bills_module_1 = require("./modules/bills/bills.module");
+const payments_module_1 = require("./modules/payments/payments.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,6 +45,9 @@ exports.AppModule = AppModule = __decorate([
             daily_reports_module_1.DailyReportsModule,
             dashboard_module_1.DashboardModule,
             mail_module_1.MailModule,
+            orders_module_1.OrdersModule,
+            bills_module_1.BillsModule,
+            payments_module_1.PaymentsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

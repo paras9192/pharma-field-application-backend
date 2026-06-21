@@ -178,6 +178,63 @@ export class UsersService {
     return { message: 'Password changed successfully' };
   }
 
+  async getAssignedChemists(userId: string) {
+    await this.findOne(userId);
+    return this.prisma.salesPersonChemist.findMany({
+      where: { userId },
+      include: {
+        chemist: {
+          select: {
+            id: true, shopName: true, ownerName: true, phone: true,
+            address: true, gstNumber: true, isActive: true,
+            territory: { select: { id: true, name: true } },
+          },
+        },
+        assignedBy: { select: { id: true, name: true } },
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+  }
+
+  async assignChemists(userId: string, chemistIds: string[], assignedById: string) {
+    const user = await this.findOne(userId);
+    if (user.role?.name !== Role.SALES_PERSON) {
+      throw new BadRequestException('Chemists can only be assigned to SALES_PERSON role users');
+    }
+
+    const chemists = await this.prisma.chemist.findMany({
+      where: { id: { in: chemistIds } },
+      select: { id: true, shopName: true },
+    });
+    if (chemists.length !== chemistIds.length) {
+      throw new NotFoundException('One or more chemist IDs not found');
+    }
+
+    // Remove any existing assignments for these chemists (auto-reassign)
+    await this.prisma.salesPersonChemist.deleteMany({
+      where: { chemistId: { in: chemistIds } },
+    });
+
+    await this.prisma.salesPersonChemist.createMany({
+      data: chemistIds.map((chemistId) => ({ userId, chemistId, assignedById })),
+    });
+
+    return this.getAssignedChemists(userId);
+  }
+
+  async unassignChemist(userId: string, chemistId: string) {
+    const record = await this.prisma.salesPersonChemist.findUnique({
+      where: { userId_chemistId: { userId, chemistId } },
+    });
+    if (!record) throw new NotFoundException('Assignment not found');
+
+    await this.prisma.salesPersonChemist.delete({
+      where: { userId_chemistId: { userId, chemistId } },
+    });
+
+    return { message: 'Chemist unassigned successfully' };
+  }
+
   async adminResetPassword(userId: string, newPassword: string, currentUser: any) {
     const target = await this.findOne(userId);
     if (

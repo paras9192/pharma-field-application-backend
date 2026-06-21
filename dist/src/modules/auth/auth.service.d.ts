@@ -96,10 +96,10 @@ export declare class AuthService {
             };
         } & {
             id: number;
-            userId: string;
             territoryId: number;
-            assignedAt: Date;
+            userId: string;
             assignedById: string | null;
+            assignedAt: Date;
         })[];
         id: string;
         name: string;

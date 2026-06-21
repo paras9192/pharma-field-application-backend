@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -14,6 +15,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
+import { AssignChemistsDto } from './dto/assign-chemists.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -83,5 +85,30 @@ export class UsersController {
     @CurrentUser() currentUser: any,
   ) {
     return this.usersService.adminResetPassword(id, dto.password, currentUser);
+  }
+
+  @Get(':id/assigned-chemists')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'List chemists assigned to a sales person' })
+  getAssignedChemists(@Param('id') id: string) {
+    return this.usersService.getAssignedChemists(id);
+  }
+
+  @Post(':id/assigned-chemists')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Assign one or more chemists to a sales person' })
+  assignChemists(
+    @Param('id') id: string,
+    @Body() dto: AssignChemistsDto,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.usersService.assignChemists(id, dto.chemistIds, adminId);
+  }
+
+  @Delete(':id/assigned-chemists/:chemistId')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Remove a chemist assignment from a sales person' })
+  unassignChemist(@Param('id') id: string, @Param('chemistId') chemistId: string) {
+    return this.usersService.unassignChemist(id, chemistId);
   }
 }

@@ -28,13 +28,13 @@ export declare class DoctorsController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        alternatePhone: string | null;
+        address: string | null;
         territoryId: number | null;
+        addedById: string | null;
         specialization: string | null;
         clinicName: string | null;
         hospitalName: string | null;
-        alternatePhone: string | null;
-        address: string | null;
-        addedById: string | null;
     }>;
     findAll(query: PaginationDto & {
         territoryId?: number;
@@ -63,13 +63,13 @@ export declare class DoctorsController {
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
+            alternatePhone: string | null;
+            address: string | null;
             territoryId: number | null;
+            addedById: string | null;
             specialization: string | null;
             clinicName: string | null;
             hospitalName: string | null;
-            alternatePhone: string | null;
-            address: string | null;
-            addedById: string | null;
         })[];
         meta: {
             total: number;
@@ -87,31 +87,31 @@ export declare class DoctorsController {
             products: {
                 id: number;
                 createdAt: Date;
-                visitId: string;
                 productName: string;
-                details: string | null;
                 quantity: string | null;
+                visitId: string;
+                details: string | null;
             }[];
         } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             territoryId: number | null;
+            userId: string;
+            chemistId: string | null;
+            status: import("@prisma/client").$Enums.VisitStatus;
+            notes: string | null;
             visitDate: Date;
             visitType: import("@prisma/client").$Enums.VisitType;
             doctorId: string | null;
-            chemistId: string | null;
             visitTime: Date;
             lat: import("@prisma/client-runtime-utils").Decimal | null;
             lng: import("@prisma/client-runtime-utils").Decimal | null;
             locationAddress: string | null;
             purpose: string | null;
-            notes: string | null;
             followUpDate: Date | null;
             followUpNotes: string | null;
             followUpDone: boolean;
-            status: import("@prisma/client").$Enums.VisitStatus;
         })[];
         territory: ({
             city: {
@@ -156,13 +156,13 @@ export declare class DoctorsController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        alternatePhone: string | null;
+        address: string | null;
         territoryId: number | null;
+        addedById: string | null;
         specialization: string | null;
         clinicName: string | null;
         hospitalName: string | null;
-        alternatePhone: string | null;
-        address: string | null;
-        addedById: string | null;
     }>;
     update(id: string, dto: UpdateDoctorDto): Promise<{
         territory: {
@@ -183,13 +183,13 @@ export declare class DoctorsController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        alternatePhone: string | null;
+        address: string | null;
         territoryId: number | null;
+        addedById: string | null;
         specialization: string | null;
         clinicName: string | null;
         hospitalName: string | null;
-        alternatePhone: string | null;
-        address: string | null;
-        addedById: string | null;
     }>;
     remove(id: string): Promise<{
         message: string;

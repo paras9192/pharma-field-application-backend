@@ -6,9 +6,14 @@ const swagger_1 = require("@nestjs/swagger");
 const app_module_1 = require("./app.module");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const response_interceptor_1 = require("./common/interceptors/response.interceptor");
+const path_1 = require("path");
+const fs_1 = require("fs");
 async function bootstrap() {
+    const uploadsDir = (0, path_1.join)(process.cwd(), 'uploads', 'bills');
+    (0, fs_1.mkdirSync)(uploadsDir, { recursive: true });
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.setGlobalPrefix('api/v1');
+    app.useStaticAssets((0, path_1.join)(process.cwd(), 'uploads'), { prefix: '/uploads' });
     app.enableCors({
         origin: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
