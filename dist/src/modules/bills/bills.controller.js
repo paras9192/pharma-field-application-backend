@@ -40,7 +40,7 @@ let BillsController = class BillsController {
         this.billsService = billsService;
     }
     create(currentUser, dto) {
-        return this.billsService.create(currentUser.id, dto);
+        return this.billsService.create(currentUser.id, dto, currentUser);
     }
     findAll(currentUser, query) {
         return this.billsService.findAll(query, currentUser);
@@ -61,8 +61,8 @@ let BillsController = class BillsController {
         }));
         return this.billsService.uploadBillImages(id, mapped, currentUser);
     }
-    deleteBillImage(id, imageId, currentUser) {
-        return this.billsService.deleteBillImage(id, imageId, currentUser);
+    deleteBillImage(id, imageId) {
+        return this.billsService.deleteBillImage(id, imageId);
     }
     createSettlement(currentUser, dto) {
         return this.billsService.createSettlement(currentUser.id, dto, currentUser);
@@ -74,8 +74,7 @@ let BillsController = class BillsController {
 exports.BillsController = BillsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)(role_enum_1.Role.SALES_PERSON, role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
-    (0, swagger_1.ApiOperation)({ summary: 'Create a bill (standalone or linked to an order)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a bill — SA/Admin only. SP → 403, MR → 401' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -106,7 +105,7 @@ __decorate([
 ], BillsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(':id/upload'),
-    (0, roles_decorator_1.Roles)(role_enum_1.Role.SALES_PERSON, role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN, role_enum_1.Role.SALES_PERSON, role_enum_1.Role.MR),
     (0, swagger_1.ApiOperation)({ summary: 'Upload one or more bill images / PDF scans (max 10 files, 10 MB each)' }),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiBody)({
@@ -130,13 +129,12 @@ __decorate([
 ], BillsController.prototype, "uploadBillImages", null);
 __decorate([
     (0, common_1.Delete)(':id/images/:imageId'),
-    (0, roles_decorator_1.Roles)(role_enum_1.Role.SALES_PERSON, role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.SUPER_ADMIN, role_enum_1.Role.ADMIN, role_enum_1.Role.SALES_PERSON, role_enum_1.Role.MR),
     (0, swagger_1.ApiOperation)({ summary: 'Delete a specific bill image' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Param)('imageId', common_1.ParseIntPipe)),
-    __param(2, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Object]),
+    __metadata("design:paramtypes", [String, Number]),
     __metadata("design:returntype", void 0)
 ], BillsController.prototype, "deleteBillImage", null);
 __decorate([

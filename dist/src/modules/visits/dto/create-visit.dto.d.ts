@@ -26,5 +26,6 @@ export declare class CreateVisitDto {
     followUpDate?: string;
     followUpNotes?: string;
     status?: VisitStatus;
+    locationCapturedAt?: string;
     products?: VisitProductDto[];
 }

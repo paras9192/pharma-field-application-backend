@@ -14,6 +14,16 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const role_enum_1 = require("../../common/enums/role.enum");
+const CHEMIST_INCLUDE = {
+    territory: true,
+    addedBy: { select: { id: true, name: true } },
+    salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
+    images: {
+        select: { id: true, url: true, filename: true, createdAt: true,
+            uploadedBy: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'asc' },
+    },
+};
 let ChemistsService = class ChemistsService {
     prisma;
     constructor(prisma) {
@@ -34,9 +44,16 @@ let ChemistsService = class ChemistsService {
         };
     }
     async create(dto, addedById) {
+        const { latitude, longitude, locationCapturedAt, ...rest } = dto;
         return this.prisma.chemist.create({
-            data: { ...dto, addedById },
-            include: { territory: true, addedBy: { select: { id: true, name: true } } },
+            data: {
+                ...rest,
+                addedById,
+                latitude: latitude ?? undefined,
+                longitude: longitude ?? undefined,
+                locationCapturedAt: locationCapturedAt ? new Date(locationCapturedAt) : undefined,
+            },
+            include: CHEMIST_INCLUDE,
         });
     }
     async findAll(query, currentUser) {
@@ -64,11 +81,7 @@ let ChemistsService = class ChemistsService {
                 where,
                 skip,
                 take,
-                include: {
-                    territory: true,
-                    addedBy: { select: { id: true, name: true } },
-                    salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
-                },
+                include: CHEMIST_INCLUDE,
                 orderBy: { shopName: 'asc' },
             }),
             this.prisma.chemist.count({ where }),
@@ -82,6 +95,11 @@ let ChemistsService = class ChemistsService {
                 territory: { include: { city: { include: { district: { include: { state: true } } } } } },
                 addedBy: { select: { id: true, name: true } },
                 salesPersons: { select: { user: { select: { id: true, name: true } } }, take: 1 },
+                images: {
+                    select: { id: true, url: true, filename: true, createdAt: true,
+                        uploadedBy: { select: { id: true, name: true } } },
+                    orderBy: { createdAt: 'asc' },
+                },
                 visits: {
                     orderBy: { visitDate: 'desc' },
                     take: 10,
@@ -93,18 +111,54 @@ let ChemistsService = class ChemistsService {
             throw new common_1.NotFoundException('Chemist not found');
         return this.withAssignedSalesPerson(chemist);
     }
-    async update(id, dto) {
-        await this.findOne(id);
+    async update(id, dto, currentUser) {
+        const chemist = await this.prisma.chemist.findUnique({
+            where: { id },
+            select: { addedById: true },
+        });
+        if (!chemist)
+            throw new common_1.NotFoundException('Chemist not found');
+        if (currentUser.role.name === role_enum_1.Role.MR || currentUser.role.name === role_enum_1.Role.SALES_PERSON) {
+            if (chemist.addedById !== currentUser.id) {
+                throw new common_1.ForbiddenException('You can only edit chemists you created');
+            }
+        }
         return this.prisma.chemist.update({
             where: { id },
             data: dto,
-            include: { territory: true },
+            include: CHEMIST_INCLUDE,
         });
     }
     async remove(id) {
         await this.findOne(id);
         await this.prisma.chemist.update({ where: { id }, data: { isActive: false } });
         return { message: 'Chemist deactivated successfully' };
+    }
+    async uploadImages(id, files, currentUser) {
+        const chemist = await this.prisma.chemist.findUnique({ where: { id } });
+        if (!chemist)
+            throw new common_1.NotFoundException('Chemist not found');
+        await this.prisma.chemistImage.createMany({
+            data: files.map((f) => ({
+                chemistId: id,
+                url: f.path,
+                filename: f.filename,
+                uploadedById: currentUser.id,
+            })),
+        });
+        return this.findOne(id);
+    }
+    async deleteImage(chemistId, imageId, currentUser) {
+        const image = await this.prisma.chemistImage.findFirst({ where: { id: imageId, chemistId } });
+        if (!image)
+            throw new common_1.NotFoundException('Image not found on this chemist');
+        if (currentUser.role.name === role_enum_1.Role.MR || currentUser.role.name === role_enum_1.Role.SALES_PERSON) {
+            if (image.uploadedById !== currentUser.id) {
+                throw new common_1.ForbiddenException('You can only delete images you uploaded');
+            }
+        }
+        await this.prisma.chemistImage.delete({ where: { id: imageId } });
+        return { message: 'Image deleted' };
     }
 };
 exports.ChemistsService = ChemistsService;

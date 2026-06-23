@@ -9,8 +9,9 @@ import { join } from 'path';
 import { mkdirSync } from 'fs';
 
 async function bootstrap() {
-  const uploadsDir = join(process.cwd(), 'uploads', 'bills');
-  mkdirSync(uploadsDir, { recursive: true });
+  for (const sub of ['bills', 'visits', 'doctors', 'chemists']) {
+    mkdirSync(join(process.cwd(), 'uploads', sub), { recursive: true });
+  }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 

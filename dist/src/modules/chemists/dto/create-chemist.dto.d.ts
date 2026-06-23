@@ -7,4 +7,7 @@ export declare class CreateChemistDto {
     gstNumber?: string;
     address?: string;
     territoryId?: number;
+    latitude?: number;
+    longitude?: number;
+    locationCapturedAt?: string;
 }

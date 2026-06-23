@@ -110,11 +110,13 @@ export declare class DailyReportsService {
         };
     }>;
     findOne(id: string, currentUser: any): Promise<{
+        totalVisits: number;
+        doctorVisits: number;
+        chemistVisits: number;
         user: {
             id: string;
             name: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -126,17 +128,16 @@ export declare class DailyReportsService {
         highlights: string | null;
         challenges: string | null;
         remarks: string | null;
-        totalVisits: number;
-        doctorVisits: number;
-        chemistVisits: number;
         submittedAt: Date | null;
     }>;
-    getMyTodayReport(userId: string): Promise<({
+    getMyTodayReport(userId: string): Promise<{
+        totalVisits: number;
+        doctorVisits: number;
+        chemistVisits: number;
         user: {
             id: string;
             name: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -148,9 +149,6 @@ export declare class DailyReportsService {
         highlights: string | null;
         challenges: string | null;
         remarks: string | null;
-        totalVisits: number;
-        doctorVisits: number;
-        chemistVisits: number;
         submittedAt: Date | null;
-    }) | null>;
+    } | null>;
 }

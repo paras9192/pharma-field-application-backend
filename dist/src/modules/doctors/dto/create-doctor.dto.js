@@ -23,6 +23,9 @@ class CreateDoctorDto {
     email;
     address;
     territoryId;
+    latitude;
+    longitude;
+    locationCapturedAt;
 }
 exports.CreateDoctorDto = CreateDoctorDto;
 __decorate([
@@ -79,4 +82,22 @@ __decorate([
     (0, class_validator_1.IsInt)(),
     __metadata("design:type", Number)
 ], CreateDoctorDto.prototype, "territoryId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'GPS latitude captured at creation' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateDoctorDto.prototype, "latitude", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'GPS longitude captured at creation' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateDoctorDto.prototype, "longitude", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'ISO timestamp when GPS was captured' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], CreateDoctorDto.prototype, "locationCapturedAt", void 0);
 //# sourceMappingURL=create-doctor.dto.js.map

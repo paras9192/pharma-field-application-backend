@@ -5,7 +5,7 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 export declare class ChemistsController {
     private chemistsService;
     constructor(chemistsService: ChemistsService);
-    create(dto: CreateChemistDto, userId: string): Promise<{
+    create(dto: CreateChemistDto, currentUser: any): Promise<{
         territory: {
             id: number;
             name: string;
@@ -20,6 +20,22 @@ export declare class ChemistsController {
             id: string;
             name: string;
         } | null;
+        salesPersons: {
+            user: {
+                id: string;
+                name: string;
+            };
+        }[];
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
     } & {
         id: string;
         email: string | null;
@@ -34,6 +50,9 @@ export declare class ChemistsController {
         address: string | null;
         territoryId: number | null;
         addedById: string | null;
+        latitude: import("@prisma/client-runtime-utils").Decimal | null;
+        longitude: import("@prisma/client-runtime-utils").Decimal | null;
+        locationCapturedAt: Date | null;
     }>;
     findAll(query: PaginationDto & {
         territoryId?: number;
@@ -48,7 +67,7 @@ export declare class ChemistsController {
         };
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateChemistDto): Promise<{
+    update(id: string, dto: UpdateChemistDto, currentUser: any): Promise<{
         territory: {
             id: number;
             name: string;
@@ -59,6 +78,26 @@ export declare class ChemistsController {
             code: string | null;
             cityId: number;
         } | null;
+        addedBy: {
+            id: string;
+            name: string;
+        } | null;
+        salesPersons: {
+            user: {
+                id: string;
+                name: string;
+            };
+        }[];
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
     } & {
         id: string;
         email: string | null;
@@ -73,8 +112,15 @@ export declare class ChemistsController {
         address: string | null;
         territoryId: number | null;
         addedById: string | null;
+        latitude: import("@prisma/client-runtime-utils").Decimal | null;
+        longitude: import("@prisma/client-runtime-utils").Decimal | null;
+        locationCapturedAt: Date | null;
     }>;
     remove(id: string): Promise<{
+        message: string;
+    }>;
+    uploadImages(id: string, files: Express.Multer.File[], currentUser: any): Promise<any>;
+    deleteImage(id: string, imageId: number, currentUser: any): Promise<{
         message: string;
     }>;
 }

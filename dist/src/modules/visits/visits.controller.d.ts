@@ -20,6 +20,16 @@ export declare class VisitsController {
             shopName: string;
             ownerName: string;
         } | null;
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         doctor: {
             id: string;
             name: string;
@@ -40,13 +50,14 @@ export declare class VisitsController {
         createdAt: Date;
         updatedAt: Date;
         territoryId: number | null;
+        locationCapturedAt: Date | null;
         userId: string;
         chemistId: string | null;
         status: import("@prisma/client").$Enums.VisitStatus;
         notes: string | null;
+        doctorId: string | null;
         visitDate: Date;
         visitType: import("@prisma/client").$Enums.VisitType;
-        doctorId: string | null;
         visitTime: Date;
         lat: import("@prisma/client-runtime-utils").Decimal | null;
         lng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -79,6 +90,16 @@ export declare class VisitsController {
                 shopName: string;
                 ownerName: string;
             } | null;
+            images: {
+                url: string;
+                id: number;
+                createdAt: Date;
+                filename: string;
+                uploadedBy: {
+                    id: string;
+                    name: string;
+                };
+            }[];
             doctor: {
                 id: string;
                 name: string;
@@ -99,13 +120,14 @@ export declare class VisitsController {
             createdAt: Date;
             updatedAt: Date;
             territoryId: number | null;
+            locationCapturedAt: Date | null;
             userId: string;
             chemistId: string | null;
             status: import("@prisma/client").$Enums.VisitStatus;
             notes: string | null;
+            doctorId: string | null;
             visitDate: Date;
             visitType: import("@prisma/client").$Enums.VisitType;
-            doctorId: string | null;
             visitTime: Date;
             lat: import("@prisma/client-runtime-utils").Decimal | null;
             lng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -137,6 +159,16 @@ export declare class VisitsController {
             shopName: string;
             ownerName: string;
         } | null;
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         doctor: {
             id: string;
             name: string;
@@ -157,13 +189,14 @@ export declare class VisitsController {
         createdAt: Date;
         updatedAt: Date;
         territoryId: number | null;
+        locationCapturedAt: Date | null;
         userId: string;
         chemistId: string | null;
         status: import("@prisma/client").$Enums.VisitStatus;
         notes: string | null;
+        doctorId: string | null;
         visitDate: Date;
         visitType: import("@prisma/client").$Enums.VisitType;
-        doctorId: string | null;
         visitTime: Date;
         lat: import("@prisma/client-runtime-utils").Decimal | null;
         lng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -188,6 +221,16 @@ export declare class VisitsController {
             shopName: string;
             ownerName: string;
         } | null;
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         doctor: {
             id: string;
             name: string;
@@ -208,13 +251,14 @@ export declare class VisitsController {
         createdAt: Date;
         updatedAt: Date;
         territoryId: number | null;
+        locationCapturedAt: Date | null;
         userId: string;
         chemistId: string | null;
         status: import("@prisma/client").$Enums.VisitStatus;
         notes: string | null;
+        doctorId: string | null;
         visitDate: Date;
         visitType: import("@prisma/client").$Enums.VisitType;
-        doctorId: string | null;
         visitTime: Date;
         lat: import("@prisma/client-runtime-utils").Decimal | null;
         lng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -239,6 +283,16 @@ export declare class VisitsController {
             shopName: string;
             ownerName: string;
         } | null;
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         doctor: {
             id: string;
             name: string;
@@ -259,13 +313,14 @@ export declare class VisitsController {
         createdAt: Date;
         updatedAt: Date;
         territoryId: number | null;
+        locationCapturedAt: Date | null;
         userId: string;
         chemistId: string | null;
         status: import("@prisma/client").$Enums.VisitStatus;
         notes: string | null;
+        doctorId: string | null;
         visitDate: Date;
         visitType: import("@prisma/client").$Enums.VisitType;
-        doctorId: string | null;
         visitTime: Date;
         lat: import("@prisma/client-runtime-utils").Decimal | null;
         lng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -290,6 +345,16 @@ export declare class VisitsController {
             shopName: string;
             ownerName: string;
         } | null;
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         doctor: {
             id: string;
             name: string;
@@ -310,13 +375,14 @@ export declare class VisitsController {
         createdAt: Date;
         updatedAt: Date;
         territoryId: number | null;
+        locationCapturedAt: Date | null;
         userId: string;
         chemistId: string | null;
         status: import("@prisma/client").$Enums.VisitStatus;
         notes: string | null;
+        doctorId: string | null;
         visitDate: Date;
         visitType: import("@prisma/client").$Enums.VisitType;
-        doctorId: string | null;
         visitTime: Date;
         lat: import("@prisma/client-runtime-utils").Decimal | null;
         lng: import("@prisma/client-runtime-utils").Decimal | null;
@@ -325,5 +391,70 @@ export declare class VisitsController {
         followUpDate: Date | null;
         followUpNotes: string | null;
         followUpDone: boolean;
+    }>;
+    uploadImages(id: string, files: Express.Multer.File[], currentUser: any): Promise<({
+        user: {
+            id: string;
+            name: string;
+            employeeCode: string | null;
+        };
+        territory: {
+            id: number;
+            name: string;
+        } | null;
+        chemist: {
+            id: string;
+            shopName: string;
+            ownerName: string;
+        } | null;
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
+        doctor: {
+            id: string;
+            name: string;
+            email: string | null;
+            specialization: string | null;
+            clinicName: string | null;
+        } | null;
+        products: {
+            id: number;
+            createdAt: Date;
+            productName: string;
+            quantity: string | null;
+            visitId: string;
+            details: string | null;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        territoryId: number | null;
+        locationCapturedAt: Date | null;
+        userId: string;
+        chemistId: string | null;
+        status: import("@prisma/client").$Enums.VisitStatus;
+        notes: string | null;
+        doctorId: string | null;
+        visitDate: Date;
+        visitType: import("@prisma/client").$Enums.VisitType;
+        visitTime: Date;
+        lat: import("@prisma/client-runtime-utils").Decimal | null;
+        lng: import("@prisma/client-runtime-utils").Decimal | null;
+        locationAddress: string | null;
+        purpose: string | null;
+        followUpDate: Date | null;
+        followUpNotes: string | null;
+        followUpDone: boolean;
+    }) | null>;
+    deleteImage(id: string, imageId: number, currentUser: any): Promise<{
+        message: string;
     }>;
 }

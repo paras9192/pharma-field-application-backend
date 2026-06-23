@@ -8,17 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DailyReportsService = void 0;
 const common_1 = require("@nestjs/common");
-const dayjs_1 = __importDefault(require("dayjs"));
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const role_enum_1 = require("../../common/enums/role.enum");
 const mail_service_1 = require("../../mail/mail.service");
+function toUTCDate(dateStr) {
+    return new Date(dateStr.split('T')[0] + 'T00:00:00.000Z');
+}
+function todayUTC() {
+    return new Date(new Date().toISOString().split('T')[0] + 'T00:00:00.000Z');
+}
 let DailyReportsService = class DailyReportsService {
     prisma;
     mail;
@@ -27,17 +29,15 @@ let DailyReportsService = class DailyReportsService {
         this.mail = mail;
     }
     async computeVisitCounts(userId, date) {
-        const start = (0, dayjs_1.default)(date).startOf('day').toDate();
-        const end = (0, dayjs_1.default)(date).endOf('day').toDate();
         const [totalVisits, doctorVisits, chemistVisits] = await Promise.all([
-            this.prisma.visit.count({ where: { userId, visitDate: { gte: start, lte: end } } }),
-            this.prisma.visit.count({ where: { userId, visitDate: { gte: start, lte: end }, visitType: 'DOCTOR' } }),
-            this.prisma.visit.count({ where: { userId, visitDate: { gte: start, lte: end }, visitType: 'CHEMIST' } }),
+            this.prisma.visit.count({ where: { userId, visitDate: date } }),
+            this.prisma.visit.count({ where: { userId, visitDate: date, visitType: 'DOCTOR' } }),
+            this.prisma.visit.count({ where: { userId, visitDate: date, visitType: 'CHEMIST' } }),
         ]);
         return { totalVisits, doctorVisits, chemistVisits };
     }
     async create(userId, dto) {
-        const date = (0, dayjs_1.default)(dto.date).startOf('day').toDate();
+        const date = toUTCDate(dto.date);
         const existing = await this.prisma.dailyReport.findUnique({
             where: { userId_date: { userId, date } },
         });
@@ -119,9 +119,9 @@ let DailyReportsService = class DailyReportsService {
         if (from || to) {
             where.date = {};
             if (from)
-                where.date.gte = (0, dayjs_1.default)(from).startOf('day').toDate();
+                where.date.gte = toUTCDate(from);
             if (to)
-                where.date.lte = (0, dayjs_1.default)(to).endOf('day').toDate();
+                where.date.lte = toUTCDate(to);
         }
         const [data, total] = await Promise.all([
             this.prisma.dailyReport.findMany({
@@ -146,14 +146,19 @@ let DailyReportsService = class DailyReportsService {
             report.userId !== currentUser.id) {
             throw new common_1.ForbiddenException('Access denied');
         }
-        return report;
+        const freshCounts = await this.computeVisitCounts(report.userId, report.date);
+        return { ...report, ...freshCounts };
     }
     async getMyTodayReport(userId) {
-        const today = (0, dayjs_1.default)().startOf('day').toDate();
-        return this.prisma.dailyReport.findUnique({
+        const today = todayUTC();
+        const report = await this.prisma.dailyReport.findUnique({
             where: { userId_date: { userId, date: today } },
             include: { user: { select: { id: true, name: true } } },
         });
+        if (!report)
+            return null;
+        const freshCounts = await this.computeVisitCounts(userId, report.date);
+        return { ...report, ...freshCounts };
     }
 };
 exports.DailyReportsService = DailyReportsService;

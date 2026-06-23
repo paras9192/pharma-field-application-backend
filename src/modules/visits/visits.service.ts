@@ -4,7 +4,6 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import dayjs from 'dayjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
@@ -18,6 +17,11 @@ const VISIT_INCLUDE = {
   chemist: { select: { id: true, shopName: true, ownerName: true } },
   territory: { select: { id: true, name: true } },
   products: true,
+  images: {
+    select: { id: true, url: true, filename: true, createdAt: true,
+      uploadedBy: { select: { id: true, name: true } } },
+    orderBy: { createdAt: 'asc' as const },
+  },
 };
 
 @Injectable()
@@ -35,7 +39,7 @@ export class VisitsService {
       throw new BadRequestException('chemistId is required for chemist visits');
     }
 
-    const { products, visitDate, followUpDate, lat, lng, territoryId, ...rest } = dto;
+    const { products, visitDate, followUpDate, lat, lng, territoryId, locationCapturedAt, ...rest } = dto;
 
     const visit = await this.prisma.visit.create({
       data: {
@@ -47,9 +51,8 @@ export class VisitsService {
         lat: lat ?? undefined,
         lng: lng ?? undefined,
         territoryId: territoryId ?? undefined,
-        products: products?.length
-          ? { create: products }
-          : undefined,
+        locationCapturedAt: locationCapturedAt ? new Date(locationCapturedAt) : undefined,
+        products: products?.length ? { create: products } : undefined,
       },
       include: VISIT_INCLUDE,
     });
@@ -77,7 +80,6 @@ export class VisitsService {
 
     const where: any = {};
 
-    // MRs and Sales Persons can only see their own visits
     if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
       where.userId = currentUser.id;
     } else if (query.userId) {
@@ -89,8 +91,8 @@ export class VisitsService {
 
     if (from || to) {
       where.visitDate = {};
-      if (from) where.visitDate.gte = dayjs(from).startOf('day').toDate();
-      if (to) where.visitDate.lte = dayjs(to).endOf('day').toDate();
+      if (from) where.visitDate.gte = new Date(from.split('T')[0] + 'T00:00:00.000Z');
+      if (to) where.visitDate.lte = new Date(to.split('T')[0] + 'T00:00:00.000Z');
     }
 
     if (followUpPending === 'true') {
@@ -159,9 +161,7 @@ export class VisitsService {
       data: {
         ...rest,
         followUpDate: followUpDate ? new Date(followUpDate) : undefined,
-        products: products !== undefined
-          ? { create: products }
-          : undefined,
+        products: products !== undefined ? { create: products } : undefined,
       },
       include: VISIT_INCLUDE,
     });
@@ -191,5 +191,36 @@ export class VisitsService {
       data: { followUpDone: true },
       include: VISIT_INCLUDE,
     });
+  }
+
+  async uploadImages(id: string, files: Array<{ path: string; filename: string }>, currentUser: any) {
+    await this.findOne(id, currentUser);
+
+    await this.prisma.visitImage.createMany({
+      data: files.map((f) => ({
+        visitId: id,
+        url: f.path,
+        filename: f.filename,
+        uploadedById: currentUser.id,
+      })),
+    });
+
+    return this.prisma.visit.findUnique({ where: { id }, include: VISIT_INCLUDE });
+  }
+
+  async deleteImage(visitId: string, imageId: number, currentUser: any) {
+    await this.findOne(visitId, currentUser);
+
+    const image = await this.prisma.visitImage.findFirst({ where: { id: imageId, visitId } });
+    if (!image) throw new NotFoundException('Image not found on this visit');
+
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+      if (image.uploadedById !== currentUser.id) {
+        throw new ForbiddenException('You can only delete images you uploaded');
+      }
+    }
+
+    await this.prisma.visitImage.delete({ where: { id: imageId } });
+    return { message: 'Image deleted' };
   }
 }

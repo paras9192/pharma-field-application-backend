@@ -35,6 +35,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         if (details) message = 'Validation failed';
         error = (res.error as string) || error;
       }
+      // Normalise to SCREAMING_SNAKE_CASE so FE can do switch(code)
+      error = error.replace(/\s+/g, '_').toUpperCase();
     } else if (exception instanceof Error) {
       message = exception.message;
       this.logger.error(`Unhandled error: ${exception.message}`, exception.stack);

@@ -62,12 +62,14 @@ export declare class DailyReportsController {
             totalPages: number;
         };
     }>;
-    getMyTodayReport(userId: string): Promise<({
+    getMyTodayReport(userId: string): Promise<{
+        totalVisits: number;
+        doctorVisits: number;
+        chemistVisits: number;
         user: {
             id: string;
             name: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -79,17 +81,16 @@ export declare class DailyReportsController {
         highlights: string | null;
         challenges: string | null;
         remarks: string | null;
-        totalVisits: number;
-        doctorVisits: number;
-        chemistVisits: number;
         submittedAt: Date | null;
-    }) | null>;
+    } | null>;
     findOne(id: string, currentUser: any): Promise<{
+        totalVisits: number;
+        doctorVisits: number;
+        chemistVisits: number;
         user: {
             id: string;
             name: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -101,9 +102,6 @@ export declare class DailyReportsController {
         highlights: string | null;
         challenges: string | null;
         remarks: string | null;
-        totalVisits: number;
-        doctorVisits: number;
-        chemistVisits: number;
         submittedAt: Date | null;
     }>;
     update(id: string, dto: UpdateDailyReportDto, currentUser: any): Promise<{

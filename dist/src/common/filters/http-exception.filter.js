@@ -33,6 +33,7 @@ let AllExceptionsFilter = AllExceptionsFilter_1 = class AllExceptionsFilter {
                     message = 'Validation failed';
                 error = res.error || error;
             }
+            error = error.replace(/\s+/g, '_').toUpperCase();
         }
         else if (exception instanceof Error) {
             message = exception.message;

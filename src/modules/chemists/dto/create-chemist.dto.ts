@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateChemistDto {
@@ -40,4 +40,19 @@ export class CreateChemistDto {
   @Type(() => Number)
   @IsInt()
   territoryId?: number;
+
+  @ApiPropertyOptional({ description: 'GPS latitude captured at creation' })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: 'GPS longitude captured at creation' })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @ApiPropertyOptional({ description: 'ISO timestamp when GPS was captured' })
+  @IsOptional()
+  @IsDateString()
+  locationCapturedAt?: string;
 }

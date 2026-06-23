@@ -61,6 +61,7 @@ class CreateVisitDto {
     followUpDate;
     followUpNotes;
     status;
+    locationCapturedAt;
     products;
 }
 exports.CreateVisitDto = CreateVisitDto;
@@ -140,6 +141,12 @@ __decorate([
     (0, class_validator_1.IsEnum)(VisitStatus),
     __metadata("design:type", String)
 ], CreateVisitDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'ISO timestamp when GPS was captured' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateVisitDto.prototype, "locationCapturedAt", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ type: [VisitProductDto] }),
     (0, class_validator_1.IsOptional)(),

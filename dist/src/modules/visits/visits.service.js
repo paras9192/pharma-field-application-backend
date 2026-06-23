@@ -8,13 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisitsService = void 0;
 const common_1 = require("@nestjs/common");
-const dayjs_1 = __importDefault(require("dayjs"));
 const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const role_enum_1 = require("../../common/enums/role.enum");
@@ -25,6 +21,11 @@ const VISIT_INCLUDE = {
     chemist: { select: { id: true, shopName: true, ownerName: true } },
     territory: { select: { id: true, name: true } },
     products: true,
+    images: {
+        select: { id: true, url: true, filename: true, createdAt: true,
+            uploadedBy: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'asc' },
+    },
 };
 let VisitsService = class VisitsService {
     prisma;
@@ -40,7 +41,7 @@ let VisitsService = class VisitsService {
         if (dto.visitType === 'CHEMIST' && !dto.chemistId) {
             throw new common_1.BadRequestException('chemistId is required for chemist visits');
         }
-        const { products, visitDate, followUpDate, lat, lng, territoryId, ...rest } = dto;
+        const { products, visitDate, followUpDate, lat, lng, territoryId, locationCapturedAt, ...rest } = dto;
         const visit = await this.prisma.visit.create({
             data: {
                 ...rest,
@@ -51,9 +52,8 @@ let VisitsService = class VisitsService {
                 lat: lat ?? undefined,
                 lng: lng ?? undefined,
                 territoryId: territoryId ?? undefined,
-                products: products?.length
-                    ? { create: products }
-                    : undefined,
+                locationCapturedAt: locationCapturedAt ? new Date(locationCapturedAt) : undefined,
+                products: products?.length ? { create: products } : undefined,
             },
             include: VISIT_INCLUDE,
         });
@@ -80,9 +80,9 @@ let VisitsService = class VisitsService {
         if (from || to) {
             where.visitDate = {};
             if (from)
-                where.visitDate.gte = (0, dayjs_1.default)(from).startOf('day').toDate();
+                where.visitDate.gte = new Date(from.split('T')[0] + 'T00:00:00.000Z');
             if (to)
-                where.visitDate.lte = (0, dayjs_1.default)(to).endOf('day').toDate();
+                where.visitDate.lte = new Date(to.split('T')[0] + 'T00:00:00.000Z');
         }
         if (followUpPending === 'true') {
             where.followUpDate = { lte: new Date() };
@@ -136,9 +136,7 @@ let VisitsService = class VisitsService {
             data: {
                 ...rest,
                 followUpDate: followUpDate ? new Date(followUpDate) : undefined,
-                products: products !== undefined
-                    ? { create: products }
-                    : undefined,
+                products: products !== undefined ? { create: products } : undefined,
             },
             include: VISIT_INCLUDE,
         });
@@ -164,6 +162,31 @@ let VisitsService = class VisitsService {
             data: { followUpDone: true },
             include: VISIT_INCLUDE,
         });
+    }
+    async uploadImages(id, files, currentUser) {
+        await this.findOne(id, currentUser);
+        await this.prisma.visitImage.createMany({
+            data: files.map((f) => ({
+                visitId: id,
+                url: f.path,
+                filename: f.filename,
+                uploadedById: currentUser.id,
+            })),
+        });
+        return this.prisma.visit.findUnique({ where: { id }, include: VISIT_INCLUDE });
+    }
+    async deleteImage(visitId, imageId, currentUser) {
+        await this.findOne(visitId, currentUser);
+        const image = await this.prisma.visitImage.findFirst({ where: { id: imageId, visitId } });
+        if (!image)
+            throw new common_1.NotFoundException('Image not found on this visit');
+        if (currentUser.role.name === role_enum_1.Role.MR || currentUser.role.name === role_enum_1.Role.SALES_PERSON) {
+            if (image.uploadedById !== currentUser.id) {
+                throw new common_1.ForbiddenException('You can only delete images you uploaded');
+            }
+        }
+        await this.prisma.visitImage.delete({ where: { id: imageId } });
+        return { message: 'Image deleted' };
     }
 };
 exports.VisitsService = VisitsService;

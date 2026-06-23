@@ -15,6 +15,11 @@ const prisma_service_1 = require("../../prisma/prisma.service");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const role_enum_1 = require("../../common/enums/role.enum");
 const chemists_service_1 = require("../chemists/chemists.service");
+function assertNotMR(currentUser) {
+    if (currentUser?.role?.name === role_enum_1.Role.MR) {
+        throw new common_1.UnauthorizedException('MR users do not have access to bills');
+    }
+}
 const BILL_INCLUDE = {
     chemist: { select: { id: true, shopName: true, ownerName: true, phone: true } },
     order: { select: { id: true, orderNumber: true, status: true } },
@@ -47,7 +52,11 @@ let BillsService = class BillsService {
         const rand = Math.floor(1000 + Math.random() * 9000);
         return `BILL-${ts}-${rand}`;
     }
-    async create(userId, dto) {
+    async create(userId, dto, currentUser) {
+        assertNotMR(currentUser);
+        if (currentUser?.role?.name === role_enum_1.Role.SALES_PERSON) {
+            throw new common_1.ForbiddenException('Sales Person cannot create bills');
+        }
         const chemist = await this.prisma.chemist.findUnique({ where: { id: dto.chemistId } });
         if (!chemist)
             throw new common_1.NotFoundException('Chemist not found');
@@ -114,19 +123,23 @@ let BillsService = class BillsService {
         return bill;
     }
     async uploadBillImages(id, files, currentUser) {
-        const bill = await this.findOne(id, currentUser);
+        const bill = await this.prisma.bill.findUnique({ where: { id } });
+        if (!bill)
+            throw new common_1.NotFoundException('Bill not found');
         await this.prisma.billImage.createMany({
             data: files.map((f) => ({
-                billId: bill.id,
+                billId: id,
                 url: f.path,
                 filename: f.filename,
                 uploadedById: currentUser.id,
             })),
         });
-        return this.prisma.bill.findUnique({ where: { id: bill.id }, include: BILL_INCLUDE });
+        return this.prisma.bill.findUnique({ where: { id }, include: BILL_INCLUDE });
     }
-    async deleteBillImage(billId, imageId, currentUser) {
-        await this.findOne(billId, currentUser);
+    async deleteBillImage(billId, imageId) {
+        const bill = await this.prisma.bill.findUnique({ where: { id: billId } });
+        if (!bill)
+            throw new common_1.NotFoundException('Bill not found');
         const image = await this.prisma.billImage.findFirst({ where: { id: imageId, billId } });
         if (!image)
             throw new common_1.NotFoundException('Image not found on this bill');

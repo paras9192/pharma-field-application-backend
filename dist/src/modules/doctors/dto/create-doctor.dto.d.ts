@@ -8,4 +8,7 @@ export declare class CreateDoctorDto {
     email?: string;
     address?: string;
     territoryId?: number;
+    latitude?: number;
+    longitude?: number;
+    locationCapturedAt?: string;
 }

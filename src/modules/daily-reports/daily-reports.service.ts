@@ -5,13 +5,23 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import dayjs from 'dayjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDailyReportDto } from './dto/create-daily-report.dto';
 import { UpdateDailyReportDto } from './dto/update-daily-report.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
 import { MailService } from '../../mail/mail.service';
+
+// Parse a YYYY-MM-DD string as UTC midnight to avoid local-timezone shifts
+// e.g. "2026-06-22" → 2026-06-22T00:00:00.000Z regardless of server timezone
+function toUTCDate(dateStr: string): Date {
+  return new Date(dateStr.split('T')[0] + 'T00:00:00.000Z');
+}
+
+// Today expressed as UTC midnight so it matches date-only DB columns consistently
+function todayUTC(): Date {
+  return new Date(new Date().toISOString().split('T')[0] + 'T00:00:00.000Z');
+}
 
 @Injectable()
 export class DailyReportsService {
@@ -21,20 +31,16 @@ export class DailyReportsService {
   ) {}
 
   private async computeVisitCounts(userId: string, date: Date) {
-    const start = dayjs(date).startOf('day').toDate();
-    const end = dayjs(date).endOf('day').toDate();
-
     const [totalVisits, doctorVisits, chemistVisits] = await Promise.all([
-      this.prisma.visit.count({ where: { userId, visitDate: { gte: start, lte: end } } }),
-      this.prisma.visit.count({ where: { userId, visitDate: { gte: start, lte: end }, visitType: 'DOCTOR' } }),
-      this.prisma.visit.count({ where: { userId, visitDate: { gte: start, lte: end }, visitType: 'CHEMIST' } }),
+      this.prisma.visit.count({ where: { userId, visitDate: date } }),
+      this.prisma.visit.count({ where: { userId, visitDate: date, visitType: 'DOCTOR' } }),
+      this.prisma.visit.count({ where: { userId, visitDate: date, visitType: 'CHEMIST' } }),
     ]);
-
     return { totalVisits, doctorVisits, chemistVisits };
   }
 
   async create(userId: string, dto: CreateDailyReportDto) {
-    const date = dayjs(dto.date).startOf('day').toDate();
+    const date = toUTCDate(dto.date);
 
     const existing = await this.prisma.dailyReport.findUnique({
       where: { userId_date: { userId, date } },
@@ -137,8 +143,8 @@ export class DailyReportsService {
 
     if (from || to) {
       where.date = {};
-      if (from) where.date.gte = dayjs(from).startOf('day').toDate();
-      if (to) where.date.lte = dayjs(to).endOf('day').toDate();
+      if (from) where.date.gte = toUTCDate(from);
+      if (to) where.date.lte = toUTCDate(to);
     }
 
     const [data, total] = await Promise.all([
@@ -169,14 +175,18 @@ export class DailyReportsService {
       throw new ForbiddenException('Access denied');
     }
 
-    return report;
+    const freshCounts = await this.computeVisitCounts(report.userId, report.date);
+    return { ...report, ...freshCounts };
   }
 
   async getMyTodayReport(userId: string) {
-    const today = dayjs().startOf('day').toDate();
-    return this.prisma.dailyReport.findUnique({
+    const today = todayUTC();
+    const report = await this.prisma.dailyReport.findUnique({
       where: { userId_date: { userId, date: today } },
       include: { user: { select: { id: true, name: true } } },
     });
+    if (!report) return null;
+    const freshCounts = await this.computeVisitCounts(userId, report.date);
+    return { ...report, ...freshCounts };
   }
 }

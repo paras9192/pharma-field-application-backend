@@ -8,7 +8,7 @@ export declare class BillsService {
     private chemistsService;
     constructor(prisma: PrismaService, chemistsService: ChemistsService);
     private generateBillNumber;
-    create(userId: string, dto: CreateBillDto): Promise<{
+    create(userId: string, dto: CreateBillDto, currentUser: any): Promise<{
         createdBy: {
             id: string;
             name: string;
@@ -20,6 +20,16 @@ export declare class BillsService {
             shopName: string;
             ownerName: string;
         };
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         order: {
             id: string;
             orderNumber: string;
@@ -43,16 +53,6 @@ export declare class BillsService {
             amount: import("@prisma/client-runtime-utils").Decimal;
             type: import("@prisma/client").$Enums.SettlementType;
             reason: string | null;
-        }[];
-        images: {
-            url: string;
-            id: number;
-            createdAt: Date;
-            filename: string;
-            uploadedBy: {
-                id: string;
-                name: string;
-            };
         }[];
     } & {
         id: string;
@@ -87,6 +87,16 @@ export declare class BillsService {
                 shopName: string;
                 ownerName: string;
             };
+            images: {
+                url: string;
+                id: number;
+                createdAt: Date;
+                filename: string;
+                uploadedBy: {
+                    id: string;
+                    name: string;
+                };
+            }[];
             order: {
                 id: string;
                 orderNumber: string;
@@ -110,16 +120,6 @@ export declare class BillsService {
                 amount: import("@prisma/client-runtime-utils").Decimal;
                 type: import("@prisma/client").$Enums.SettlementType;
                 reason: string | null;
-            }[];
-            images: {
-                url: string;
-                id: number;
-                createdAt: Date;
-                filename: string;
-                uploadedBy: {
-                    id: string;
-                    name: string;
-                };
             }[];
         } & {
             id: string;
@@ -155,6 +155,16 @@ export declare class BillsService {
             shopName: string;
             ownerName: string;
         };
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         order: {
             id: string;
             orderNumber: string;
@@ -178,16 +188,6 @@ export declare class BillsService {
             amount: import("@prisma/client-runtime-utils").Decimal;
             type: import("@prisma/client").$Enums.SettlementType;
             reason: string | null;
-        }[];
-        images: {
-            url: string;
-            id: number;
-            createdAt: Date;
-            filename: string;
-            uploadedBy: {
-                id: string;
-                name: string;
-            };
         }[];
     } & {
         id: string;
@@ -219,6 +219,16 @@ export declare class BillsService {
             shopName: string;
             ownerName: string;
         };
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
         order: {
             id: string;
             orderNumber: string;
@@ -243,16 +253,6 @@ export declare class BillsService {
             type: import("@prisma/client").$Enums.SettlementType;
             reason: string | null;
         }[];
-        images: {
-            url: string;
-            id: number;
-            createdAt: Date;
-            filename: string;
-            uploadedBy: {
-                id: string;
-                name: string;
-            };
-        }[];
     } & {
         id: string;
         createdById: string;
@@ -268,7 +268,7 @@ export declare class BillsService {
         dueAmount: import("@prisma/client-runtime-utils").Decimal;
         dueDate: Date | null;
     }) | null>;
-    deleteBillImage(billId: string, imageId: number, currentUser: any): Promise<{
+    deleteBillImage(billId: string, imageId: number): Promise<{
         message: string;
     }>;
     createSettlement(userId: string, dto: CreateSettlementDto, currentUser: any): Promise<{

@@ -51,10 +51,9 @@ export class BillsController {
   constructor(private billsService: BillsService) {}
 
   @Post()
-  @Roles(Role.SALES_PERSON, Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiOperation({ summary: 'Create a bill (standalone or linked to an order)' })
+  @ApiOperation({ summary: 'Create a bill — SA/Admin only. SP → 403, MR → 401' })
   create(@CurrentUser() currentUser: any, @Body() dto: CreateBillDto) {
-    return this.billsService.create(currentUser.id, dto);
+    return this.billsService.create(currentUser.id, dto, currentUser);
   }
 
   @Get()
@@ -77,7 +76,7 @@ export class BillsController {
   }
 
   @Post(':id/upload')
-  @Roles(Role.SALES_PERSON, Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
   @ApiOperation({ summary: 'Upload one or more bill images / PDF scans (max 10 files, 10 MB each)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -115,14 +114,13 @@ export class BillsController {
   }
 
   @Delete(':id/images/:imageId')
-  @Roles(Role.SALES_PERSON, Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
   @ApiOperation({ summary: 'Delete a specific bill image' })
   deleteBillImage(
     @Param('id') id: string,
     @Param('imageId', ParseIntPipe) imageId: number,
-    @CurrentUser() currentUser: any,
   ) {
-    return this.billsService.deleteBillImage(id, imageId, currentUser);
+    return this.billsService.deleteBillImage(id, imageId);
   }
 
   @Post('settlements')

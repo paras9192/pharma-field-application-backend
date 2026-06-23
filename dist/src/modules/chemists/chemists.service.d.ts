@@ -22,6 +22,22 @@ export declare class ChemistsService {
             id: string;
             name: string;
         } | null;
+        salesPersons: {
+            user: {
+                id: string;
+                name: string;
+            };
+        }[];
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
     } & {
         id: string;
         email: string | null;
@@ -36,6 +52,9 @@ export declare class ChemistsService {
         address: string | null;
         territoryId: number | null;
         addedById: string | null;
+        latitude: import("@prisma/client-runtime-utils").Decimal | null;
+        longitude: import("@prisma/client-runtime-utils").Decimal | null;
+        locationCapturedAt: Date | null;
     }>;
     findAll(query: PaginationDto & {
         territoryId?: number;
@@ -50,7 +69,7 @@ export declare class ChemistsService {
         };
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateChemistDto): Promise<{
+    update(id: string, dto: UpdateChemistDto, currentUser: any): Promise<{
         territory: {
             id: number;
             name: string;
@@ -61,6 +80,26 @@ export declare class ChemistsService {
             code: string | null;
             cityId: number;
         } | null;
+        addedBy: {
+            id: string;
+            name: string;
+        } | null;
+        salesPersons: {
+            user: {
+                id: string;
+                name: string;
+            };
+        }[];
+        images: {
+            url: string;
+            id: number;
+            createdAt: Date;
+            filename: string;
+            uploadedBy: {
+                id: string;
+                name: string;
+            };
+        }[];
     } & {
         id: string;
         email: string | null;
@@ -75,8 +114,18 @@ export declare class ChemistsService {
         address: string | null;
         territoryId: number | null;
         addedById: string | null;
+        latitude: import("@prisma/client-runtime-utils").Decimal | null;
+        longitude: import("@prisma/client-runtime-utils").Decimal | null;
+        locationCapturedAt: Date | null;
     }>;
     remove(id: string): Promise<{
+        message: string;
+    }>;
+    uploadImages(id: string, files: Array<{
+        path: string;
+        filename: string;
+    }>, currentUser: any): Promise<any>;
+    deleteImage(chemistId: string, imageId: number, currentUser: any): Promise<{
         message: string;
     }>;
 }

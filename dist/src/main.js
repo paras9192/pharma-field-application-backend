@@ -9,8 +9,9 @@ const response_interceptor_1 = require("./common/interceptors/response.intercept
 const path_1 = require("path");
 const fs_1 = require("fs");
 async function bootstrap() {
-    const uploadsDir = (0, path_1.join)(process.cwd(), 'uploads', 'bills');
-    (0, fs_1.mkdirSync)(uploadsDir, { recursive: true });
+    for (const sub of ['bills', 'visits', 'doctors', 'chemists']) {
+        (0, fs_1.mkdirSync)((0, path_1.join)(process.cwd(), 'uploads', sub), { recursive: true });
+    }
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.setGlobalPrefix('api/v1');
     app.useStaticAssets((0, path_1.join)(process.cwd(), 'uploads'), { prefix: '/uploads' });

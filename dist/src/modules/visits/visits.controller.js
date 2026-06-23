@@ -14,13 +14,25 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisitsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
+const multer_1 = require("multer");
+const path_1 = require("path");
 const visits_service_1 = require("./visits.service");
 const create_visit_dto_1 = require("./dto/create-visit.dto");
 const update_visit_dto_1 = require("./dto/update-visit.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
+const ALLOWED_IMAGE_TYPES = /\.(jpg|jpeg|png|webp)$/i;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const visitImageStorage = (0, multer_1.diskStorage)({
+    destination: './uploads/visits',
+    filename: (_req, file, cb) => {
+        const suffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+        cb(null, `visit-${suffix}${(0, path_1.extname)(file.originalname)}`);
+    },
+});
 let VisitsController = class VisitsController {
     visitsService;
     constructor(visitsService) {
@@ -43,6 +55,18 @@ let VisitsController = class VisitsController {
     }
     markFollowUpDone(id, currentUser) {
         return this.visitsService.markFollowUpDone(id, currentUser);
+    }
+    uploadImages(id, files, currentUser) {
+        if (!files || files.length === 0)
+            throw new common_1.BadRequestException('No files uploaded');
+        const invalid = files.filter((f) => !ALLOWED_IMAGE_TYPES.test((0, path_1.extname)(f.originalname)));
+        if (invalid.length > 0)
+            throw new common_1.BadRequestException('Only JPG, JPEG, PNG, or WEBP files are allowed');
+        const mapped = files.map((f) => ({ path: `/uploads/visits/${f.filename}`, filename: f.originalname }));
+        return this.visitsService.uploadImages(id, mapped, currentUser);
+    }
+    deleteImage(id, imageId, currentUser) {
+        return this.visitsService.deleteImage(id, imageId, currentUser);
     }
 };
 exports.VisitsController = VisitsController;
@@ -89,7 +113,7 @@ __decorate([
 ], VisitsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Update a visit' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a visit (MR/Sales Person can only edit their own)' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
@@ -106,6 +130,37 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "markFollowUpDone", null);
+__decorate([
+    (0, common_1.Post)(':id/images'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload visit images (jpg/jpeg/png/webp, max 5 MB each, max 10 files)' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } },
+        },
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('files', 10, {
+        storage: visitImageStorage,
+        limits: { fileSize: MAX_FILE_SIZE },
+    })),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Array, Object]),
+    __metadata("design:returntype", void 0)
+], VisitsController.prototype, "uploadImages", null);
+__decorate([
+    (0, common_1.Delete)(':id/images/:imageId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a visit image' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('imageId', common_1.ParseIntPipe)),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, Object]),
+    __metadata("design:returntype", void 0)
+], VisitsController.prototype, "deleteImage", null);
 exports.VisitsController = VisitsController = __decorate([
     (0, swagger_1.ApiTags)('Visits'),
     (0, swagger_1.ApiBearerAuth)(),

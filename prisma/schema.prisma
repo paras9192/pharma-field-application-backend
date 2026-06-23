@@ -105,7 +105,10 @@ model User {
   billsCreated        Bill[]     @relation("BillCreatedBy")
   paymentsCollected   Payment[]  @relation("PaymentCollectedBy")
   settlementsCreated  Settlement[] @relation("SettlementCreatedBy")
-  billImagesUploaded  BillImage[]  @relation("BillImageUploadedBy")
+  billImagesUploaded    BillImage[]    @relation("BillImageUploadedBy")
+  visitImagesUploaded   VisitImage[]   @relation("VisitImageUploadedBy")
+  doctorImagesUploaded  DoctorImage[]  @relation("DoctorImageUploadedBy")
+  chemistImagesUploaded ChemistImage[] @relation("ChemistImageUploadedBy")
   assignedChemists    SalesPersonChemist[] @relation("SalesPersonAssignments")
   assignedToSalesPerson SalesPersonChemist[] @relation("ChemistAssignedBy")
 
@@ -198,47 +201,55 @@ model EmployeeTerritory {
 // ─── Doctors & Chemists ───────────────────────────────────────────────────────
 
 model Doctor {
-  id             String     @id @default(uuid())
-  name           String
-  specialization String?
-  clinicName     String?    @map("clinic_name")
-  hospitalName   String?    @map("hospital_name")
-  phone          String?
-  alternatePhone String?    @map("alternate_phone")
-  email          String?
-  address        String?
-  territoryId    Int?       @map("territory_id")
-  territory      Territory? @relation(fields: [territoryId], references: [id])
-  addedById      String?    @map("added_by")
-  addedBy        User?      @relation(fields: [addedById], references: [id])
-  isActive       Boolean    @default(true) @map("is_active")
-  visits         Visit[]
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  id                  String       @id @default(uuid())
+  name                String
+  specialization      String?
+  clinicName          String?      @map("clinic_name")
+  hospitalName        String?      @map("hospital_name")
+  phone               String?
+  alternatePhone      String?      @map("alternate_phone")
+  email               String?
+  address             String?
+  territoryId         Int?         @map("territory_id")
+  territory           Territory?   @relation(fields: [territoryId], references: [id])
+  addedById           String?      @map("added_by")
+  addedBy             User?        @relation(fields: [addedById], references: [id])
+  isActive            Boolean      @default(true) @map("is_active")
+  latitude            Decimal?     @db.Decimal(10, 7)
+  longitude           Decimal?     @db.Decimal(10, 7)
+  locationCapturedAt  DateTime?    @map("location_captured_at")
+  visits              Visit[]
+  images              DoctorImage[]
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
 
   @@map("doctors")
 }
 
 model Chemist {
-  id             String     @id @default(uuid())
-  shopName       String     @map("shop_name")
-  ownerName      String     @map("owner_name")
-  phone          String
-  alternatePhone String?    @map("alternate_phone")
-  email          String?
-  gstNumber      String?    @map("gst_number")
-  address        String?
-  territoryId    Int?       @map("territory_id")
-  territory      Territory? @relation(fields: [territoryId], references: [id])
-  addedById      String?    @map("added_by")
-  addedBy        User?      @relation(fields: [addedById], references: [id])
-  isActive       Boolean    @default(true) @map("is_active")
-  visits         Visit[]
-  orders         Order[]
-  bills          Bill[]
-  salesPersons   SalesPersonChemist[]
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  id                  String       @id @default(uuid())
+  shopName            String       @map("shop_name")
+  ownerName           String       @map("owner_name")
+  phone               String
+  alternatePhone      String?      @map("alternate_phone")
+  email               String?
+  gstNumber           String?      @map("gst_number")
+  address             String?
+  territoryId         Int?         @map("territory_id")
+  territory           Territory?   @relation(fields: [territoryId], references: [id])
+  addedById           String?      @map("added_by")
+  addedBy             User?        @relation(fields: [addedById], references: [id])
+  isActive            Boolean      @default(true) @map("is_active")
+  latitude            Decimal?     @db.Decimal(10, 7)
+  longitude           Decimal?     @db.Decimal(10, 7)
+  locationCapturedAt  DateTime?    @map("location_captured_at")
+  visits              Visit[]
+  orders              Order[]
+  bills               Bill[]
+  salesPersons        SalesPersonChemist[]
+  images              ChemistImage[]
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
 
   @@map("chemists")
 }
@@ -290,11 +301,13 @@ model Visit {
   notes           String?
   followUpDate    DateTime?   @map("follow_up_date") @db.Date
   followUpNotes   String?     @map("follow_up_notes")
-  followUpDone    Boolean     @default(false) @map("follow_up_done")
-  status          VisitStatus @default(COMPLETED)
-  products        VisitProduct[]
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  followUpDone        Boolean     @default(false) @map("follow_up_done")
+  status              VisitStatus @default(COMPLETED)
+  locationCapturedAt  DateTime?   @map("location_captured_at")
+  products            VisitProduct[]
+  images              VisitImage[]
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
 
   @@map("visits")
 }
@@ -452,14 +465,53 @@ model SalesPersonChemist {
 // ─── Bill Images ──────────────────────────────────────────────────────────────
 
 model BillImage {
-  id          Int      @id @default(autoincrement())
-  billId      String   @map("bill_id")
-  bill        Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
-  url         String
-  filename    String
-  uploadedById String  @map("uploaded_by")
-  uploadedBy   User    @relation("BillImageUploadedBy", fields: [uploadedById], references: [id])
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  billId       String   @map("bill_id")
+  bill         Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  url          String
+  filename     String
+  uploadedById String   @map("uploaded_by")
+  uploadedBy   User     @relation("BillImageUploadedBy", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("bill_images")
+}
+
+model VisitImage {
+  id           Int      @id @default(autoincrement())
+  visitId      String   @map("visit_id")
+  visit        Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  url          String
+  filename     String
+  uploadedById String   @map("uploaded_by")
+  uploadedBy   User     @relation("VisitImageUploadedBy", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("visit_images")
+}
+
+model DoctorImage {
+  id           Int      @id @default(autoincrement())
+  doctorId     String   @map("doctor_id")
+  doctor       Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  url          String
+  filename     String
+  uploadedById String   @map("uploaded_by")
+  uploadedBy   User     @relation("DoctorImageUploadedBy", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("doctor_images")
+}
+
+model ChemistImage {
+  id           Int      @id @default(autoincrement())
+  chemistId    String   @map("chemist_id")
+  chemist      Chemist  @relation(fields: [chemistId], references: [id], onDelete: Cascade)
+  url          String
+  filename     String
+  uploadedById String   @map("uploaded_by")
+  uploadedBy   User     @relation("ChemistImageUploadedBy", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("chemist_images")
 }

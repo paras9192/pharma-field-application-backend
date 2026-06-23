@@ -102,6 +102,11 @@ export class CreateVisitDto {
   @IsEnum(VisitStatus)
   status?: VisitStatus;
 
+  @ApiPropertyOptional({ description: 'ISO timestamp when GPS was captured' })
+  @IsOptional()
+  @IsString()
+  locationCapturedAt?: string;
+
   @ApiPropertyOptional({ type: [VisitProductDto] })
   @IsOptional()
   @IsArray()
