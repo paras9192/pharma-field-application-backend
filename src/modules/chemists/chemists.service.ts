@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { S3Service } from '../../common/s3/s3.service';
 import { CreateChemistDto } from './dto/create-chemist.dto';
 import { UpdateChemistDto } from './dto/update-chemist.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -18,7 +19,10 @@ const CHEMIST_INCLUDE = {
 
 @Injectable()
 export class ChemistsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private s3: S3Service,
+  ) {}
 
   async getAssignedChemistIds(userId: string): Promise<string[]> {
     const rows = await this.prisma.salesPersonChemist.findMany({
@@ -166,6 +170,7 @@ export class ChemistsService {
       }
     }
 
+    await this.s3.deleteObject(image.url).catch(() => {});
     await this.prisma.chemistImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };
   }

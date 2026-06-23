@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../../mail/mail.service';
 import { CollectPaymentDto } from './dto/collect-payment.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
@@ -26,10 +27,16 @@ const PAYMENT_INCLUDE = {
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+  ) {}
 
   async collect(userId: string, dto: CollectPaymentDto) {
-    const bill = await this.prisma.bill.findUnique({ where: { id: dto.billId } });
+    const bill = await this.prisma.bill.findUnique({
+      where: { id: dto.billId },
+      include: { chemist: { select: { shopName: true, ownerName: true, email: true } } },
+    });
     if (!bill) throw new NotFoundException('Bill not found');
 
     if (bill.status === 'PAID') {
@@ -66,6 +73,27 @@ export class PaymentsService {
         },
       }),
     ]);
+
+    const collector = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, employeeCode: true },
+    });
+
+    this.mail.notifyPaymentCollected({
+      billNumber: bill.billNumber,
+      chemistName: `${bill.chemist?.shopName ?? '—'} (${bill.chemist?.ownerName ?? ''})`,
+      chemistEmail: bill.chemist?.email ?? null,
+      collectedBy: collector ? `${collector.name} (${collector.employeeCode ?? ''})` : userId,
+      paymentMode: dto.paymentMode,
+      amountCollected: dto.amount,
+      totalAmount: Number(bill.totalAmount),
+      paidAmount: newPaidAmount,
+      dueAmount: newDueAmount,
+      billStatus: newStatus,
+      referenceNumber: dto.referenceNumber,
+      notes: dto.notes,
+      collectedAt: new Date(),
+    });
 
     return payment;
   }

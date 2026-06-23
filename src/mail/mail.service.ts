@@ -161,6 +161,124 @@ export class MailService {
     this.send(recipients, `New ${visit.visitType} Visit — ${visit.user.name} (${dateStr})`, html);
   }
 
+  async notifyPaymentCollected(data: {
+    billNumber: string;
+    chemistName: string;
+    chemistEmail: string | null;
+    collectedBy: string;
+    paymentMode: string;
+    amountCollected: number;
+    totalAmount: number;
+    paidAmount: number;
+    dueAmount: number;
+    billStatus: string;
+    referenceNumber?: string | null;
+    notes?: string | null;
+    collectedAt: Date;
+  }): Promise<void> {
+    const superAdminEmails = await this.getSuperAdminEmails();
+    const recipients = [...superAdminEmails];
+    if (data.chemistEmail) recipients.push(data.chemistEmail);
+    if (!recipients.length) return;
+
+    const appName = this.config.get('APP_NAME') ?? 'PharmaField';
+    const fmt = (n: number) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    const isCleared = data.billStatus === 'PAID';
+    const statusColor = isCleared ? '#16a34a' : '#d97706';
+    const statusLabel = isCleared ? 'FULLY PAID' : 'PARTIAL';
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#1e293b">
+        <div style="background:#1d4ed8;padding:24px 32px;border-radius:8px 8px 0 0">
+          <h1 style="color:#fff;margin:0;font-size:20px">${appName}</h1>
+          <p style="color:#bfdbfe;margin:4px 0 0;font-size:13px">Payment Notification</p>
+        </div>
+        <div style="padding:28px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+          <h2 style="margin:0 0 4px;font-size:18px;color:#1e293b">
+            ${isCleared ? '🎉 Bill Fully Cleared!' : '💰 Payment Received'}
+          </h2>
+          <p style="color:#64748b;margin:0 0 24px;font-size:14px">
+            ${data.collectedAt.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+
+          <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+            <tr style="background:#f8fafc">
+              <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:600;width:40%">Bill Number</td>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0">${data.billNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:600">Chemist / Party</td>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0">${data.chemistName}</td>
+            </tr>
+            <tr style="background:#f8fafc">
+              <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:600">Collected By</td>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0">${data.collectedBy}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:600">Payment Mode</td>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0">${data.paymentMode}</td>
+            </tr>
+            ${data.referenceNumber ? `
+            <tr style="background:#f8fafc">
+              <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:600">Reference No.</td>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0">${data.referenceNumber}</td>
+            </tr>` : ''}
+            ${data.notes ? `
+            <tr>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:600">Notes</td>
+              <td style="padding:10px 14px;border:1px solid #e2e8f0">${data.notes}</td>
+            </tr>` : ''}
+          </table>
+
+          <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+            <thead>
+              <tr style="background:#1d4ed8;color:#fff">
+                <th style="padding:10px 14px;text-align:left;border:1px solid #1d4ed8">Description</th>
+                <th style="padding:10px 14px;text-align:right;border:1px solid #1d4ed8">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:#f8fafc">
+                <td style="padding:10px 14px;border:1px solid #e2e8f0">Bill Total</td>
+                <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:right">${fmt(data.totalAmount)}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 14px;border:1px solid #e2e8f0;color:#16a34a;font-weight:600">This Payment</td>
+                <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:right;color:#16a34a;font-weight:600">+ ${fmt(data.amountCollected)}</td>
+              </tr>
+              <tr style="background:#f8fafc">
+                <td style="padding:10px 14px;border:1px solid #e2e8f0">Total Paid</td>
+                <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:right">${fmt(data.paidAmount)}</td>
+              </tr>
+              <tr style="${isCleared ? 'background:#dcfce7' : 'background:#fef9c3'}">
+                <td style="padding:10px 14px;border:1px solid #e2e8f0;font-weight:700">Balance Due</td>
+                <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:right;font-weight:700;color:${statusColor}">${fmt(data.dueAmount)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="text-align:center;margin-bottom:24px">
+            <span style="background:${statusColor};color:#fff;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:0.5px">
+              ${statusLabel}
+            </span>
+          </div>
+
+          ${isCleared ? `
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:16px;text-align:center">
+            <p style="margin:0;color:#15803d;font-weight:600">✅ This bill has been fully settled. No further payment is due.</p>
+          </div>` : ''}
+
+          <p style="color:#64748b;font-size:12px;margin-top:8px">This is an automated notification from ${appName}.</p>
+        </div>
+      </div>`;
+
+    const subject = isCleared
+      ? `✅ Bill Cleared — ${data.billNumber} | ${data.chemistName}`
+      : `💰 Payment Received — ${data.billNumber} | ${fmt(data.amountCollected)} collected`;
+
+    this.send(recipients, subject, html);
+  }
+
   async notifyDoctor(visit: {
     visitDate: Date;
     notes?: string | null;

@@ -12,7 +12,6 @@ import {
   UseInterceptors,
   BadRequestException,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -21,8 +20,6 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { BillsService } from './bills.service';
 import { CreateBillDto } from './dto/create-bill.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
@@ -32,16 +29,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-
-const ALLOWED_TYPES = /\.(jpg|jpeg|png|pdf|webp)$/i;
-
-const billImageStorage = diskStorage({
-  destination: './uploads/bills',
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `bill-${uniqueSuffix}${extname(file.originalname)}`);
-  },
-});
+import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
 
 @ApiTags('Bills')
 @ApiBearerAuth()
@@ -87,29 +75,14 @@ export class BillsController {
       },
     },
   })
-  @UseInterceptors(
-    FilesInterceptor('files', 10, {
-      storage: billImageStorage,
-      limits: { fileSize: 10 * 1024 * 1024 },
-    }),
-  )
+  @UseInterceptors(S3FilesInterceptor('bills', 'files', 10))
   uploadBillImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() currentUser: any,
   ) {
     if (!files || files.length === 0) throw new BadRequestException('No files uploaded');
-
-    const invalid = files.filter((f) => !ALLOWED_TYPES.test(extname(f.originalname)));
-    if (invalid.length > 0) {
-      throw new BadRequestException('Only JPG, PNG, PDF, or WEBP files are allowed');
-    }
-
-    const mapped = files.map((f) => ({
-      path: `/uploads/bills/${f.filename}`,
-      filename: f.originalname,
-    }));
-
+    const mapped = files.map((f: any) => ({ path: f.location, filename: f.originalname }));
     return this.billsService.uploadBillImages(id, mapped, currentUser);
   }
 

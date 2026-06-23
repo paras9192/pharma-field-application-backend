@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { S3Service } from '../../common/s3/s3.service';
 import { CreateBillDto } from './dto/create-bill.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -43,6 +44,7 @@ export class BillsService {
   constructor(
     private prisma: PrismaService,
     private chemistsService: ChemistsService,
+    private s3: S3Service,
   ) {}
 
   private generateBillNumber(): string {
@@ -155,6 +157,7 @@ export class BillsService {
     const image = await this.prisma.billImage.findFirst({ where: { id: imageId, billId } });
     if (!image) throw new NotFoundException('Image not found on this bill');
 
+    await this.s3.deleteObject(image.url).catch(() => {});
     await this.prisma.billImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };
   }

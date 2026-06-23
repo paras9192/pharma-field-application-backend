@@ -14,6 +14,7 @@ import { VisitsModule } from './modules/visits/visits.module';
 import { DailyReportsModule } from './modules/daily-reports/daily-reports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
+import { S3Module } from './common/s3/s3.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { BillsModule } from './modules/bills/bills.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -33,6 +34,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     DailyReportsModule,
     DashboardModule,
     MailModule,
+    S3Module,
     OrdersModule,
     BillsModule,
     PaymentsModule,

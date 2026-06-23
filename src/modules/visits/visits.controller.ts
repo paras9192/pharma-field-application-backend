@@ -2,12 +2,9 @@ import {
   Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post,
   Query, UploadedFiles, UseGuards, UseInterceptors, BadRequestException,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags,
 } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { VisitsService } from './visits.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
@@ -15,17 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-
-const ALLOWED_IMAGE_TYPES = /\.(jpg|jpeg|png|webp)$/i;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-
-const visitImageStorage = diskStorage({
-  destination: './uploads/visits',
-  filename: (_req, file, cb) => {
-    const suffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `visit-${suffix}${extname(file.originalname)}`);
-  },
-});
+import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
 
 @ApiTags('Visits')
 @ApiBearerAuth()
@@ -92,7 +79,7 @@ export class VisitsController {
   }
 
   @Post(':id/images')
-  @ApiOperation({ summary: 'Upload visit images (jpg/jpeg/png/webp, max 5 MB each, max 10 files)' })
+  @ApiOperation({ summary: 'Upload visit images to S3 (jpg/png/webp/heic, max 10 MB each, max 10 files)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -100,22 +87,14 @@ export class VisitsController {
       properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } },
     },
   })
-  @UseInterceptors(
-    FilesInterceptor('files', 10, {
-      storage: visitImageStorage,
-      limits: { fileSize: MAX_FILE_SIZE },
-    }),
-  )
+  @UseInterceptors(S3FilesInterceptor('visits', 'files', 10))
   uploadImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() currentUser: any,
   ) {
     if (!files || files.length === 0) throw new BadRequestException('No files uploaded');
-    const invalid = files.filter((f) => !ALLOWED_IMAGE_TYPES.test(extname(f.originalname)));
-    if (invalid.length > 0) throw new BadRequestException('Only JPG, JPEG, PNG, or WEBP files are allowed');
-
-    const mapped = files.map((f) => ({ path: `/uploads/visits/${f.filename}`, filename: f.originalname }));
+    const mapped = files.map((f: any) => ({ path: f.location, filename: f.originalname }));
     return this.visitsService.uploadImages(id, mapped, currentUser);
   }
 

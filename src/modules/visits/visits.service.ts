@@ -10,6 +10,7 @@ import { UpdateVisitDto } from './dto/update-visit.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
 import { MailService } from '../../mail/mail.service';
+import { S3Service } from '../../common/s3/s3.service';
 
 const VISIT_INCLUDE = {
   user: { select: { id: true, name: true, employeeCode: true } },
@@ -29,6 +30,7 @@ export class VisitsService {
   constructor(
     private prisma: PrismaService,
     private mail: MailService,
+    private s3: S3Service,
   ) {}
 
   async create(userId: string, dto: CreateVisitDto) {
@@ -220,6 +222,7 @@ export class VisitsService {
       }
     }
 
+    await this.s3.deleteObject(image.url).catch(() => {});
     await this.prisma.visitImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };
   }

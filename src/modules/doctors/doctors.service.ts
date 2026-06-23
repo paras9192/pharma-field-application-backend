@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { S3Service } from '../../common/s3/s3.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -17,7 +18,10 @@ const DOCTOR_INCLUDE = {
 
 @Injectable()
 export class DoctorsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private s3: S3Service,
+  ) {}
 
   async create(dto: CreateDoctorDto, addedById: string) {
     const { latitude, longitude, locationCapturedAt, ...rest } = dto;
@@ -133,6 +137,7 @@ export class DoctorsService {
       }
     }
 
+    await this.s3.deleteObject(image.url).catch(() => {});
     await this.prisma.doctorImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };
   }

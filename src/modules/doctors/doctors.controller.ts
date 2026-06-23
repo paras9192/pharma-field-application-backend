@@ -2,12 +2,9 @@ import {
   Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post,
   Query, UploadedFiles, UseGuards, UseInterceptors, BadRequestException,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags,
 } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
@@ -17,17 +14,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-
-const ALLOWED_IMAGE_TYPES = /\.(jpg|jpeg|png|webp)$/i;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-
-const doctorImageStorage = diskStorage({
-  destination: './uploads/doctors',
-  filename: (_req, file, cb) => {
-    const suffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `doctor-${suffix}${extname(file.originalname)}`);
-  },
-});
+import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
 
 @ApiTags('Doctors')
 @ApiBearerAuth()
@@ -68,7 +55,7 @@ export class DoctorsController {
   }
 
   @Post(':id/images')
-  @ApiOperation({ summary: 'Upload doctor images (jpg/jpeg/png/webp, max 5 MB each, max 10 files)' })
+  @ApiOperation({ summary: 'Upload doctor images to S3 (jpg/png/webp/heic, max 10 MB each, max 10 files)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -76,22 +63,14 @@ export class DoctorsController {
       properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } },
     },
   })
-  @UseInterceptors(
-    FilesInterceptor('files', 10, {
-      storage: doctorImageStorage,
-      limits: { fileSize: MAX_FILE_SIZE },
-    }),
-  )
+  @UseInterceptors(S3FilesInterceptor('doctors', 'files', 10))
   uploadImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() currentUser: any,
   ) {
     if (!files || files.length === 0) throw new BadRequestException('No files uploaded');
-    const invalid = files.filter((f) => !ALLOWED_IMAGE_TYPES.test(extname(f.originalname)));
-    if (invalid.length > 0) throw new BadRequestException('Only JPG, JPEG, PNG, or WEBP files are allowed');
-
-    const mapped = files.map((f) => ({ path: `/uploads/doctors/${f.filename}`, filename: f.originalname }));
+    const mapped = files.map((f: any) => ({ path: f.location, filename: f.originalname }));
     return this.doctorsService.uploadImages(id, mapped, currentUser);
   }
 
