@@ -19,5 +19,30 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    container_name: pharma_field_api
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-pharma_user}:${DB_PASSWORD:-pharma_pass}@postgres:5432/${DB_NAME:-pharma_field_db}
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      APP_URL: ${APP_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
+  uploads_data:
