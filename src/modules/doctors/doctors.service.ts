@@ -24,7 +24,7 @@ export class DoctorsService {
   ) {}
 
   async create(dto: CreateDoctorDto, addedById: string) {
-    const { latitude, longitude, locationCapturedAt, ...rest } = dto;
+    const { latitude, longitude, locationCapturedAt, birthday, anniversary, ...rest } = dto;
     return this.prisma.doctor.create({
       data: {
         ...rest,
@@ -32,6 +32,8 @@ export class DoctorsService {
         latitude: latitude ?? undefined,
         longitude: longitude ?? undefined,
         locationCapturedAt: locationCapturedAt ? new Date(locationCapturedAt) : undefined,
+        birthday: birthday ? new Date(birthday) : undefined,
+        anniversary: anniversary ? new Date(anniversary) : undefined,
       },
       include: DOCTOR_INCLUDE,
     });
@@ -99,9 +101,14 @@ export class DoctorsService {
       }
     }
 
+    const { birthday, anniversary, ...rest } = dto;
     return this.prisma.doctor.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        ...(birthday !== undefined ? { birthday: new Date(birthday) } : {}),
+        ...(anniversary !== undefined ? { anniversary: new Date(anniversary) } : {}),
+      },
       include: DOCTOR_INCLUDE,
     });
   }

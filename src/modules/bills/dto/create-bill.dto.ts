@@ -11,6 +11,11 @@ export class CreateBillDto {
   @IsUUID()
   orderId?: string;
 
+  @ApiPropertyOptional({ description: 'Original bill/invoice number from physical bill (alphanumeric, unique)' })
+  @IsOptional()
+  @IsString()
+  originalBillId?: string;
+
   @ApiProperty()
   @IsNumber()
   @IsPositive()

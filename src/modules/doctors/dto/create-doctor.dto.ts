@@ -48,6 +48,16 @@ export class CreateDoctorDto {
   @IsInt()
   territoryId?: number;
 
+  @ApiPropertyOptional({ example: '1990-06-15', description: 'Birthday (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsDateString()
+  birthday?: string;
+
+  @ApiPropertyOptional({ example: '2010-11-20', description: 'Anniversary (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsDateString()
+  anniversary?: string;
+
   @ApiPropertyOptional({ description: 'GPS latitude captured at creation' })
   @IsOptional()
   @IsNumber()

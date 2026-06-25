@@ -247,4 +247,24 @@ export class UsersService {
     await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
     return { message: 'Password reset successfully' };
   }
+
+  async sendPasswordResetLink(userId: string, currentUser: any) {
+    const target = await this.findOne(userId);
+    if (
+      currentUser.role.name === Role.ADMIN &&
+      target.role?.name === Role.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException('Admins cannot reset a Super Admin password');
+    }
+    if (!target.isActive) {
+      throw new BadRequestException('Cannot send reset link to an inactive user');
+    }
+    const token = this.authService.generateWelcomeToken(target.id, target.email);
+    this.mail.sendPasswordResetEmail(
+      { name: target.name, email: target.email },
+      token,
+      currentUser.name ?? 'Admin',
+    );
+    return { message: `Password reset link sent to ${target.email}` };
+  }
 }

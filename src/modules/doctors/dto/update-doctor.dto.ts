@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateDoctorDto {
@@ -48,6 +48,16 @@ export class UpdateDoctorDto {
   @Type(() => Number)
   @IsInt()
   territoryId?: number;
+
+  @ApiPropertyOptional({ example: '1990-06-15', description: 'Birthday (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsDateString()
+  birthday?: string;
+
+  @ApiPropertyOptional({ example: '2010-11-20', description: 'Anniversary (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsDateString()
+  anniversary?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

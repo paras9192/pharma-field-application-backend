@@ -67,6 +67,34 @@ export class MailService {
     this.send([user.email], `Welcome to ${appName} — Set Your Password`, html);
   }
 
+  sendPasswordResetEmail(user: { name: string; email: string }, token: string, requestedBy: string): void {
+    const appName = this.config.get('APP_NAME') ?? 'PharmaField';
+    const appUrl = this.config.get('APP_URL') ?? 'http://localhost:5173';
+    const link = `${appUrl}/set-password?token=${token}`;
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#1e293b">
+        <div style="background:#dc2626;padding:24px 32px;border-radius:8px 8px 0 0">
+          <h1 style="color:#fff;margin:0;font-size:20px">${appName}</h1>
+          <p style="color:#fecaca;margin:4px 0 0;font-size:13px">Password Reset</p>
+        </div>
+        <div style="padding:28px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+          <p style="font-size:16px">Hi <strong>${user.name}</strong>,</p>
+          <p>Your password has been reset by <strong>${requestedBy}</strong>. Please set a new password by clicking the button below.</p>
+          <p>This link is valid for <strong>24 hours</strong>.</p>
+          <div style="text-align:center;margin:32px 0">
+            <a href="${link}" style="background:#dc2626;color:#fff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Reset My Password</a>
+          </div>
+          <p style="font-size:13px;color:#64748b">If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="font-size:12px;color:#3b82f6;word-break:break-all">${link}</p>
+          <p style="font-size:13px;color:#64748b;margin-top:24px">If you did not request this, please contact your administrator immediately.</p>
+        </div>
+        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:12px">This is an automated message from ${appName}. Please do not reply.</p>
+      </div>`;
+
+    this.send([user.email], `Password Reset — ${appName}`, html);
+  }
+
   async notifyDailyReport(report: {
     id: string;
     date: Date;
@@ -159,6 +187,70 @@ export class MailService {
       </div>`;
 
     this.send(recipients, `New ${visit.visitType} Visit — ${visit.user.name} (${dateStr})`, html);
+  }
+
+  async notifyPaymentReminder(data: {
+    chemist: { shopName: string; ownerName: string; email: string | null; phone: string };
+    bills: { billNumber: string; totalAmount: any; paidAmount: any; dueAmount: any; status: string; dueDate: Date | null }[];
+    sentBy: string;
+  }): Promise<void> {
+    const appName = this.config.get('APP_NAME') ?? 'PharmaField';
+    const fmt = (n: any) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    const totalDue = data.bills.reduce((s, b) => s + Number(b.dueAmount), 0);
+
+    const billRows = data.bills.map((b, i) => {
+      const isOverdue = b.dueDate && new Date(b.dueDate) < new Date();
+      const dueDateStr = b.dueDate ? new Date(b.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+      return `
+        <tr style="${i % 2 === 0 ? 'background:#f8fafc' : ''}">
+          <td style="padding:10px 12px;border:1px solid #e2e8f0">${b.billNumber}</td>
+          <td style="padding:10px 12px;border:1px solid #e2e8f0;text-align:right">${fmt(b.totalAmount)}</td>
+          <td style="padding:10px 12px;border:1px solid #e2e8f0;text-align:right;color:#16a34a">${fmt(b.paidAmount)}</td>
+          <td style="padding:10px 12px;border:1px solid #e2e8f0;text-align:right;font-weight:700;color:${isOverdue ? '#dc2626' : '#d97706'}">${fmt(b.dueAmount)}</td>
+          <td style="padding:10px 12px;border:1px solid #e2e8f0;text-align:center">
+            <span style="background:${isOverdue ? '#fee2e2' : '#fef9c3'};color:${isOverdue ? '#dc2626' : '#92400e'};padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">
+              ${isOverdue ? '⚠ OVERDUE' : dueDateStr}
+            </span>
+          </td>
+        </tr>`;
+    }).join('');
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#1e293b">
+        <div style="background:#1d4ed8;padding:24px 32px;border-radius:8px 8px 0 0">
+          <h1 style="color:#fff;margin:0;font-size:20px">${appName}</h1>
+          <p style="color:#bfdbfe;margin:4px 0 0;font-size:13px">Payment Reminder</p>
+        </div>
+        <div style="padding:28px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+          <p style="font-size:16px">Dear <strong>${data.chemist.ownerName}</strong>,</p>
+          <p>This is a friendly reminder from <strong>${appName}</strong> regarding outstanding payment(s) on your account for <strong>${data.chemist.shopName}</strong>.</p>
+
+          <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
+            <p style="margin:0;font-size:13px;color:#92400e">Total Outstanding Amount</p>
+            <p style="margin:4px 0 0;font-size:28px;font-weight:700;color:#d97706">${fmt(totalDue)}</p>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;margin:20px 0">
+            <thead>
+              <tr style="background:#1d4ed8;color:#fff">
+                <th style="padding:10px 12px;text-align:left;border:1px solid #1d4ed8">Bill No.</th>
+                <th style="padding:10px 12px;text-align:right;border:1px solid #1d4ed8">Bill Total</th>
+                <th style="padding:10px 12px;text-align:right;border:1px solid #1d4ed8">Paid</th>
+                <th style="padding:10px 12px;text-align:right;border:1px solid #1d4ed8">Balance Due</th>
+                <th style="padding:10px 12px;text-align:center;border:1px solid #1d4ed8">Due Date</th>
+              </tr>
+            </thead>
+            <tbody>${billRows}</tbody>
+          </table>
+
+          <p>We request you to kindly arrange the payment at the earliest. If you have already made the payment, please ignore this reminder.</p>
+          <p>For any queries, please contact us at <strong>${this.config.get('SMTP_USER') ?? ''}</strong>.</p>
+          <p style="margin-top:24px">Regards,<br/><strong>${data.sentBy}</strong><br/>${appName} Team</p>
+          <p style="font-size:11px;color:#94a3b8;margin-top:16px">This is an automated reminder sent on behalf of ${appName}.</p>
+        </div>
+      </div>`;
+
+    this.send([data.chemist.email!], `Payment Reminder — ₹${Number(totalDue).toLocaleString('en-IN')} outstanding | ${data.chemist.shopName}`, html);
   }
 
   async notifyPaymentCollected(data: {

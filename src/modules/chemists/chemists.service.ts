@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { S3Service } from '../../common/s3/s3.service';
+import { MailService } from '../../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateChemistDto } from './dto/create-chemist.dto';
 import { UpdateChemistDto } from './dto/update-chemist.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -22,6 +24,8 @@ export class ChemistsService {
   constructor(
     private prisma: PrismaService,
     private s3: S3Service,
+    private mail: MailService,
+    private notifications: NotificationsService,
   ) {}
 
   async getAssignedChemistIds(userId: string): Promise<string[]> {
@@ -173,5 +177,46 @@ export class ChemistsService {
     await this.s3.deleteObject(image.url).catch(() => {});
     await this.prisma.chemistImage.delete({ where: { id: imageId } });
     return { message: 'Image deleted' };
+  }
+
+  async sendPaymentReminder(chemistId: string, currentUser: any) {
+    const chemist = await this.prisma.chemist.findUnique({
+      where: { id: chemistId },
+      select: { id: true, shopName: true, ownerName: true, email: true, phone: true },
+    });
+    if (!chemist) throw new NotFoundException('Chemist not found');
+    if (!chemist.email) throw new BadRequestException('Chemist does not have an email address on record');
+
+    const bills = await this.prisma.bill.findMany({
+      where: { chemistId, status: { in: ['UNPAID', 'PARTIAL'] } },
+      orderBy: { dueDate: 'asc' },
+      select: {
+        billNumber: true, originalBillId: true, totalAmount: true, paidAmount: true,
+        dueAmount: true, status: true, dueDate: true,
+      },
+    });
+
+    if (!bills.length) throw new BadRequestException('No outstanding bills found for this chemist');
+
+    const sender = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+      select: { name: true },
+    });
+
+    await this.mail.notifyPaymentReminder({
+      chemist,
+      bills: bills.map(b => ({ ...b, billNumber: (b as any).originalBillId ?? b.billNumber })),
+      sentBy: sender?.name ?? 'Admin',
+    });
+
+    const totalDue = bills.reduce((s, b) => s + Number(b.dueAmount), 0);
+    this.notifications.notifyAdmins(
+      `📨 Reminder Sent — ${chemist.shopName}`,
+      `Payment reminder sent to ${chemist.shopName} for ₹${totalDue.toLocaleString('en-IN')} outstanding`,
+      'PAYMENT_REMINDER',
+      { chemistId, totalDue, billCount: bills.length },
+    );
+
+    return { message: `Payment reminder sent to ${chemist.email}`, billCount: bills.length };
   }
 }

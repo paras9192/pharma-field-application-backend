@@ -112,6 +112,8 @@ model User {
   chemistImagesUploaded ChemistImage[] @relation("ChemistImageUploadedBy")
   assignedChemists    SalesPersonChemist[] @relation("SalesPersonAssignments")
   assignedToSalesPerson SalesPersonChemist[] @relation("ChemistAssignedBy")
+  notifications       Notification[]
+  fcmTokens           FcmToken[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -215,6 +217,8 @@ model Doctor {
   territory           Territory?   @relation(fields: [territoryId], references: [id])
   addedById           String?      @map("added_by")
   addedBy             User?        @relation(fields: [addedById], references: [id])
+  birthday            DateTime?    @db.Date @map("birthday")
+  anniversary         DateTime?    @db.Date @map("anniversary")
   isActive            Boolean      @default(true) @map("is_active")
   latitude            Decimal?     @db.Decimal(10, 7)
   longitude           Decimal?     @db.Decimal(10, 7)
@@ -390,8 +394,9 @@ model OrderItem {
 // ─── Bills ────────────────────────────────────────────────────────────────────
 
 model Bill {
-  id          String     @id @default(uuid())
-  billNumber  String     @unique @map("bill_number")
+  id             String     @id @default(uuid())
+  billNumber     String     @unique @map("bill_number")
+  originalBillId String?    @unique @map("original_bill_id")
   chemistId   String     @map("chemist_id")
   chemist     Chemist    @relation(fields: [chemistId], references: [id])
   orderId     String?    @map("order_id")
@@ -515,4 +520,31 @@ model ChemistImage {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("chemist_images")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String
+  data      Json?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model FcmToken {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("fcm_tokens")
 }

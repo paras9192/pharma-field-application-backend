@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService } from '../../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CollectPaymentDto } from './dto/collect-payment.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
@@ -15,6 +16,7 @@ const PAYMENT_INCLUDE = {
     select: {
       id: true,
       billNumber: true,
+      originalBillId: true,
       totalAmount: true,
       paidAmount: true,
       dueAmount: true,
@@ -30,6 +32,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private mail: MailService,
+    private notifications: NotificationsService,
   ) {}
 
   async collect(userId: string, dto: CollectPaymentDto) {
@@ -79,11 +82,16 @@ export class PaymentsService {
       select: { name: true, employeeCode: true },
     });
 
+    const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+    const collectorName = collector?.name ?? 'Staff';
+    const chemistName = bill.chemist?.shopName ?? 'Chemist';
+    const isCleared = newStatus === 'PAID';
+
     this.mail.notifyPaymentCollected({
-      billNumber: bill.billNumber,
-      chemistName: `${bill.chemist?.shopName ?? '—'} (${bill.chemist?.ownerName ?? ''})`,
+      billNumber: bill.originalBillId ?? bill.billNumber,
+      chemistName: `${chemistName} (${bill.chemist?.ownerName ?? ''})`,
       chemistEmail: bill.chemist?.email ?? null,
-      collectedBy: collector ? `${collector.name} (${collector.employeeCode ?? ''})` : userId,
+      collectedBy: collector ? `${collectorName} (${collector.employeeCode ?? ''})` : userId,
       paymentMode: dto.paymentMode,
       amountCollected: dto.amount,
       totalAmount: Number(bill.totalAmount),
@@ -94,6 +102,15 @@ export class PaymentsService {
       notes: dto.notes,
       collectedAt: new Date(),
     });
+
+    this.notifications.notifyAdmins(
+      isCleared ? `✅ Bill Cleared — ${chemistName}` : `💰 Payment Received — ${chemistName}`,
+      isCleared
+        ? `${bill.originalBillId ?? bill.billNumber} fully paid by ${collectorName}`
+        : `${fmt(dto.amount)} collected for ${bill.originalBillId ?? bill.billNumber} by ${collectorName}. Due: ${fmt(newDueAmount)}`,
+      'PAYMENT_COLLECTED',
+      { billId: bill.id, billNumber: bill.originalBillId ?? bill.billNumber, amount: dto.amount, status: newStatus },
+    );
 
     return payment;
   }

@@ -57,6 +57,12 @@ export class ChemistsController {
     return this.chemistsService.remove(id);
   }
 
+  @Post(':id/payment-reminder')
+  @ApiOperation({ summary: 'Send payment reminder email to chemist for all outstanding bills' })
+  sendPaymentReminder(@Param('id') id: string, @CurrentUser() currentUser: any) {
+    return this.chemistsService.sendPaymentReminder(id, currentUser);
+  }
+
   @Post(':id/images')
   @ApiOperation({ summary: 'Upload chemist images to S3 (jpg/png/webp/heic, max 10 MB each, max 10 files)' })
   @ApiConsumes('multipart/form-data')

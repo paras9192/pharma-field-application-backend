@@ -70,6 +70,7 @@ export class BillsService {
     return this.prisma.bill.create({
       data: {
         billNumber: this.generateBillNumber(),
+        originalBillId: dto.originalBillId ?? undefined,
         chemistId: dto.chemistId,
         orderId: dto.orderId,
         totalAmount: dto.totalAmount,
@@ -108,6 +109,7 @@ export class BillsService {
     if (search) {
       where.OR = [
         { billNumber: { contains: search, mode: 'insensitive' } },
+        { originalBillId: { contains: search, mode: 'insensitive' } },
         { chemist: { shopName: { contains: search, mode: 'insensitive' } } },
       ];
     }

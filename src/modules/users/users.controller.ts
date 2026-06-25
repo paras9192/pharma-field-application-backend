@@ -87,6 +87,13 @@ export class UsersController {
     return this.usersService.adminResetPassword(id, dto.password, currentUser);
   }
 
+  @Post(':id/send-reset-link')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Admin: send a password reset link to a user via email' })
+  sendPasswordResetLink(@Param('id') id: string, @CurrentUser() currentUser: any) {
+    return this.usersService.sendPasswordResetLink(id, currentUser);
+  }
+
   @Get(':id/assigned-chemists')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'List chemists assigned to a sales person' })
