@@ -74,7 +74,7 @@ export class DailyReportsService {
     if (!report) throw new NotFoundException('Report not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) &&
       report.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');
@@ -102,7 +102,7 @@ export class DailyReportsService {
     if (!report) throw new NotFoundException('Report not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) &&
       report.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');
@@ -133,7 +133,7 @@ export class DailyReportsService {
 
     const where: any = {};
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       where.userId = currentUser.id;
     } else if (query.userId) {
       where.userId = query.userId;
@@ -169,7 +169,7 @@ export class DailyReportsService {
     if (!report) throw new NotFoundException('Report not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) &&
       report.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');

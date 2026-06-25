@@ -82,7 +82,7 @@ export class VisitsService {
 
     const where: any = {};
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       where.userId = currentUser.id;
     } else if (query.userId) {
       where.userId = query.userId;
@@ -133,7 +133,7 @@ export class VisitsService {
     if (!visit) throw new NotFoundException('Visit not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) &&
       visit.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');
@@ -146,7 +146,7 @@ export class VisitsService {
     const visit = await this.findOne(id, currentUser);
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) &&
       visit.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Cannot update another user\'s visit');
@@ -175,7 +175,7 @@ export class VisitsService {
       followUpDone: false,
     };
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       where.userId = currentUser.id;
     }
 
@@ -216,7 +216,7 @@ export class VisitsService {
     const image = await this.prisma.visitImage.findFirst({ where: { id: imageId, visitId } });
     if (!image) throw new NotFoundException('Image not found on this visit');
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       if (image.uploadedById !== currentUser.id) {
         throw new ForbiddenException('You can only delete images you uploaded');
       }

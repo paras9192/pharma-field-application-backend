@@ -13,9 +13,11 @@ import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dt
 import { Role } from '../../common/enums/role.enum';
 import { ChemistsService } from '../chemists/chemists.service';
 
+const MR_LIKE_ROLES = [Role.MR, Role.ASM, Role.ZSM];
+
 function assertNotMR(currentUser: any) {
-  if (currentUser?.role?.name === Role.MR) {
-    throw new UnauthorizedException('MR users do not have access to bills');
+  if (MR_LIKE_ROLES.includes(currentUser?.role?.name)) {
+    throw new UnauthorizedException('MR/ASM/ZSM users do not have access to bills');
   }
 }
 

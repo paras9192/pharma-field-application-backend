@@ -111,10 +111,10 @@ export class DashboardController {
   }
 
   @Get('mr')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MR)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MR, Role.ASM, Role.ZSM)
   @ApiOperation({
-    summary: 'MR dashboard — visit KPIs, today\'s schedule, follow-ups, monthly productivity',
-    description: 'MR sees their own data. SUPER_ADMIN/ADMIN can pass ?userId= to view any MR.',
+    summary: 'MR/ASM/ZSM dashboard — visit KPIs, today\'s schedule, follow-ups, monthly productivity',
+    description: 'MR/ASM/ZSM sees their own data. SUPER_ADMIN/ADMIN can pass ?userId= to view any user.',
   })
   @ApiQuery({ name: 'userId', required: false, description: 'Target user ID (SUPER_ADMIN/ADMIN only)' })
   @ApiQuery({ name: 'date', required: false })
@@ -123,7 +123,8 @@ export class DashboardController {
     @Query('userId') userId?: string,
     @Query('date') date?: string,
   ) {
-    const targetId = currentUser.role.name === Role.MR ? currentUser.id : (userId ?? currentUser.id);
+    const isSelfOnly = [Role.MR, Role.ASM, Role.ZSM].includes(currentUser.role.name);
+    const targetId = isSelfOnly ? currentUser.id : (userId ?? currentUser.id);
     return this.dashboardService.getMRDashboard(targetId, date);
   }
 

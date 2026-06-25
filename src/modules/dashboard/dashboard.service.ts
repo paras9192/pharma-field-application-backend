@@ -999,7 +999,7 @@ export class DashboardService {
       if (pendingFollowUps > 0) {
         alerts.push({ type: 'PENDING_FOLLOWUPS', severity: 'MEDIUM', message: `${pendingFollowUps} visit follow-ups are overdue`, count: pendingFollowUps });
       }
-    } else if (currentUser.role.name === Role.MR) {
+    } else if ([Role.MR, Role.ASM, Role.ZSM].includes(currentUser.role.name)) {
       const [pendingFollowUps, todayVisitsCount, attendance, todayReport] = await Promise.all([
         this.prisma.visit.count({ where: { userId: currentUser.id, followUpDate: { lte: new Date() }, followUpDone: false } }),
         this.prisma.visit.count({ where: { userId: currentUser.id, visitDate: { gte: today.toDate(), lt: today.add(1, 'day').toDate() } } }),

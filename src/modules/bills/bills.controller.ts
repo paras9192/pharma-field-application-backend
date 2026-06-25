@@ -64,7 +64,7 @@ export class BillsController {
   }
 
   @Post(':id/upload')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR, Role.ASM, Role.ZSM)
   @ApiOperation({ summary: 'Upload one or more bill images / PDF scans (max 10 files, 10 MB each)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -87,7 +87,7 @@ export class BillsController {
   }
 
   @Delete(':id/images/:imageId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR, Role.ASM, Role.ZSM)
   @ApiOperation({ summary: 'Delete a specific bill image' })
   deleteBillImage(
     @Param('id') id: string,

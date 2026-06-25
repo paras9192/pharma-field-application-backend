@@ -95,7 +95,7 @@ export class DoctorsService {
   async update(id: string, dto: UpdateDoctorDto, currentUser: any) {
     const doctor = await this.findOne(id);
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       if (doctor.addedBy?.id !== currentUser.id) {
         throw new ForbiddenException('You can only edit doctors you created');
       }
@@ -138,7 +138,7 @@ export class DoctorsService {
     const image = await this.prisma.doctorImage.findFirst({ where: { id: imageId, doctorId } });
     if (!image) throw new NotFoundException('Image not found on this doctor');
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       if (image.uploadedById !== currentUser.id) {
         throw new ForbiddenException('You can only delete images you uploaded');
       }

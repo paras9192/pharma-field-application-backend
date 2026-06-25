@@ -40,7 +40,7 @@ export class UsersService {
 
   async create(dto: CreateUserDto, createdById: string) {
     const [roleRecord, existingEmail, existingPhone] = await Promise.all([
-      this.prisma.role.findUnique({ where: { name: dto.role } }),
+      this.prisma.role.findUnique({ where: { name: dto.role as any } }),
       this.prisma.user.findUnique({ where: { email: dto.email } }),
       this.prisma.user.findUnique({ where: { phone: dto.phone } }),
     ]);
@@ -64,7 +64,7 @@ export class UsersService {
         email: dto.email,
         phone: dto.phone,
         passwordHash,
-        roleId: roleRecord.id,
+        roleId: roleRecord!.id,
         employeeCode: dto.employeeCode,
         dateOfJoining: dto.dateOfJoining ? new Date(dto.dateOfJoining) : undefined,
         createdById,
@@ -129,8 +129,29 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateUserDto, currentUser?: any) {
+    const target = await this.findOne(id);
+
+    if (dto.role) {
+      if (
+        currentUser?.role?.name === Role.ADMIN &&
+        (dto.role === Role.SUPER_ADMIN || target.role?.name === Role.SUPER_ADMIN)
+      ) {
+        throw new ForbiddenException('Admins cannot change a Super Admin\'s role or promote to Super Admin');
+      }
+      const roleRecord = await this.prisma.role.findUnique({ where: { name: dto.role as any } });
+      if (!roleRecord) throw new BadRequestException(`Role ${dto.role} not found`);
+      const { role: _role, ...rest } = dto;
+      return this.prisma.user.update({
+        where: { id },
+        data: {
+          ...rest,
+          roleId: roleRecord.id,
+          dateOfJoining: dto.dateOfJoining ? new Date(dto.dateOfJoining) : undefined,
+        },
+        select: USER_SELECT,
+      });
+    }
 
     if (dto.phone) {
       const existing = await this.prisma.user.findFirst({
@@ -146,10 +167,11 @@ export class UsersService {
       if (existing) throw new ConflictException('Employee code already in use');
     }
 
+    const { role: _role, ...rest } = dto;
     return this.prisma.user.update({
       where: { id },
       data: {
-        ...dto,
+        ...rest,
         dateOfJoining: dto.dateOfJoining ? new Date(dto.dateOfJoining) : undefined,
       },
       select: USER_SELECT,

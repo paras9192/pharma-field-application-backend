@@ -129,7 +129,7 @@ export class ChemistsService {
     });
     if (!chemist) throw new NotFoundException('Chemist not found');
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       if (chemist.addedById !== currentUser.id) {
         throw new ForbiddenException('You can only edit chemists you created');
       }
@@ -168,7 +168,7 @@ export class ChemistsService {
     const image = await this.prisma.chemistImage.findFirst({ where: { id: imageId, chemistId } });
     if (!image) throw new NotFoundException('Image not found on this chemist');
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.ASM || currentUser.role.name === Role.ZSM || currentUser.role.name === Role.SALES_PERSON) {
       if (image.uploadedById !== currentUser.id) {
         throw new ForbiddenException('You can only delete images you uploaded');
       }
