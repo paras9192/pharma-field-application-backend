@@ -16,6 +16,9 @@ import { CreateStateDto } from './dto/create-state.dto';
 import { CreateDistrictDto } from './dto/create-district.dto';
 import { CreateCityDto } from './dto/create-city.dto';
 import { CreateTerritoryDto } from './dto/create-territory.dto';
+import { UpdateStateDto } from './dto/update-state.dto';
+import { UpdateDistrictDto } from './dto/update-district.dto';
+import { UpdateCityDto } from './dto/update-city.dto';
 import { AssignTerritoryDto } from './dto/assign-territory.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -58,6 +61,13 @@ export class TerritoriesController {
     return this.territoriesService.findStateWithDistricts(id);
   }
 
+  @Patch('states/:id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Update a state' })
+  updateState(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStateDto) {
+    return this.territoriesService.updateState(id, dto);
+  }
+
   // ─── Districts ────────────────────────────────────────────────────────────
 
   @Post('districts')
@@ -79,6 +89,13 @@ export class TerritoriesController {
     return this.territoriesService.findDistrictWithCities(id);
   }
 
+  @Patch('districts/:id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Update a district' })
+  updateDistrict(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDistrictDto) {
+    return this.territoriesService.updateDistrict(id, dto);
+  }
+
   // ─── Cities ───────────────────────────────────────────────────────────────
 
   @Post('cities')
@@ -92,6 +109,13 @@ export class TerritoriesController {
   @ApiOperation({ summary: 'List cities by district' })
   findCitiesByDistrict(@Query('districtId', new ParseIntPipe({ optional: true })) districtId?: number) {
     return this.territoriesService.findCitiesByDistrict(districtId);
+  }
+
+  @Patch('cities/:id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Update a city' })
+  updateCity(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCityDto) {
+    return this.territoriesService.updateCity(id, dto);
   }
 
   // ─── Territories ──────────────────────────────────────────────────────────

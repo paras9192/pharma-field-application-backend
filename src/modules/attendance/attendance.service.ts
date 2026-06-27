@@ -9,10 +9,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
+import { GeocodingService } from '../../common/geocoding/geocoding.service';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private geocoding: GeocodingService,
+  ) {}
 
   async checkIn(userId: string, dto: CheckInDto) {
     const today = dayjs().startOf('day').toDate();
@@ -22,6 +26,9 @@ export class AttendanceService {
     });
     if (existing) throw new ConflictException('Already checked in for today');
 
+    const checkInAddress =
+      (await this.geocoding.reverse(dto.lat, dto.lng)) ?? dto.address ?? null;
+
     return this.prisma.attendance.create({
       data: {
         userId,
@@ -29,7 +36,7 @@ export class AttendanceService {
         checkInTime: new Date(),
         checkInLat: dto.lat,
         checkInLng: dto.lng,
-        checkInAddress: dto.address,
+        checkInAddress,
         notes: dto.notes,
         status: 'PRESENT',
       },
@@ -51,13 +58,16 @@ export class AttendanceService {
     const workingHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
     const status = workingHours < 4 ? 'HALF_DAY' : 'PRESENT';
 
+    const checkOutAddress =
+      (await this.geocoding.reverse(dto.lat, dto.lng)) ?? dto.address ?? null;
+
     return this.prisma.attendance.update({
       where: { userId_date: { userId, date: today } },
       data: {
         checkOutTime,
         checkOutLat: dto.lat,
         checkOutLng: dto.lng,
-        checkOutAddress: dto.address,
+        checkOutAddress,
         workingHours,
         status,
         notes: dto.notes ?? attendance.notes,

@@ -129,40 +129,96 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateUserDto, currentUser?: any) {
+    const target = await this.findOne(id);
 
-    if (dto.phone) {
-      const existing = await this.prisma.user.findFirst({
-        where: { phone: dto.phone, NOT: { id } },
+    const { role, ...rest } = dto;
+    const performedBy: string = currentUser?.name ?? 'Admin';
+
+    if (role) {
+      if (
+        currentUser?.role?.name === Role.ADMIN &&
+        (role === Role.SUPER_ADMIN || target.role?.name === Role.SUPER_ADMIN)
+      ) {
+        throw new ForbiddenException("Admins cannot change a Super Admin's role or promote to Super Admin");
+      }
+      const roleRecord = await this.prisma.role.findUnique({ where: { name: role as any } });
+      if (!roleRecord) throw new BadRequestException(`Role ${role} not found`);
+
+      if (rest.phone) {
+        const existing = await this.prisma.user.findFirst({ where: { phone: rest.phone, NOT: { id } } });
+        if (existing) throw new ConflictException('Phone already in use');
+      }
+      if (rest.employeeCode) {
+        const existing = await this.prisma.user.findFirst({ where: { employeeCode: rest.employeeCode, NOT: { id } } });
+        if (existing) throw new ConflictException('Employee code already in use');
+      }
+
+      const updated = await this.prisma.user.update({
+        where: { id },
+        data: { ...rest, roleId: roleRecord.id, dateOfJoining: rest.dateOfJoining ? new Date(rest.dateOfJoining) : undefined } as any,
+        select: USER_SELECT,
       });
+
+      const changes = this._buildChanges(target, rest, target.role?.name, role);
+      this.mail.notifyUserUpdated(
+        { name: target.name, email: target.email, role: target.role },
+        changes,
+        performedBy,
+      );
+      return updated;
+    }
+
+    if (rest.phone) {
+      const existing = await this.prisma.user.findFirst({ where: { phone: rest.phone, NOT: { id } } });
       if (existing) throw new ConflictException('Phone already in use');
     }
 
-    if (dto.employeeCode) {
-      const existing = await this.prisma.user.findFirst({
-        where: { employeeCode: dto.employeeCode, NOT: { id } },
-      });
+    if (rest.employeeCode) {
+      const existing = await this.prisma.user.findFirst({ where: { employeeCode: rest.employeeCode, NOT: { id } } });
       if (existing) throw new ConflictException('Employee code already in use');
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
-      data: {
-        ...dto,
-        dateOfJoining: dto.dateOfJoining ? new Date(dto.dateOfJoining) : undefined,
-      },
+      data: { ...rest, dateOfJoining: rest.dateOfJoining ? new Date(rest.dateOfJoining) : undefined },
       select: USER_SELECT,
     });
+
+    const changes = this._buildChanges(target, rest, undefined, undefined);
+    this.mail.notifyUserUpdated(
+      { name: target.name, email: target.email, role: target.role },
+      changes,
+      performedBy,
+    );
+    return updated;
   }
 
-  async toggleActive(id: string) {
+  private _buildChanges(
+    target: any,
+    rest: Partial<UpdateUserDto>,
+    oldRole?: string,
+    newRole?: string,
+  ): { field: string; from: string; to: string }[] {
+    const changes: { field: string; from: string; to: string }[] = [];
+    if (newRole && oldRole !== newRole) changes.push({ field: 'Role', from: oldRole ?? '', to: newRole });
+    if (rest.name !== undefined && rest.name !== target.name) changes.push({ field: 'Name', from: target.name, to: rest.name });
+    if (rest.phone !== undefined && rest.phone !== target.phone) changes.push({ field: 'Phone', from: target.phone ?? '', to: rest.phone });
+    if (rest.employeeCode !== undefined && rest.employeeCode !== target.employeeCode) changes.push({ field: 'Employee Code', from: target.employeeCode ?? '', to: rest.employeeCode });
+    return changes;
+  }
+
+  async toggleActive(id: string, currentUser?: any) {
     const user = await this.findOne(id);
-    return this.prisma.user.update({
-      where: { id },
-      data: { isActive: !user.isActive },
-      select: USER_SELECT,
-    });
+    const nowActive = !user.isActive;
+    await this.prisma.user.update({ where: { id }, data: { isActive: nowActive }, select: USER_SELECT });
+    const performedBy: string = currentUser?.name ?? 'Admin';
+    this.mail.notifyUserStatusChanged(
+      { name: user.name, email: user.email, role: user.role },
+      nowActive,
+      performedBy,
+    );
+    return { message: `User ${nowActive ? 'activated' : 'deactivated'} successfully` };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -210,27 +266,45 @@ export class UsersService {
       throw new NotFoundException('One or more chemist IDs not found');
     }
 
-    // Remove any existing assignments for these chemists (auto-reassign)
-    await this.prisma.salesPersonChemist.deleteMany({
-      where: { chemistId: { in: chemistIds } },
+    const assignedByUser = await this.prisma.user.findUnique({
+      where: { id: assignedById },
+      select: { name: true },
     });
 
+    await this.prisma.salesPersonChemist.deleteMany({ where: { chemistId: { in: chemistIds } } });
     await this.prisma.salesPersonChemist.createMany({
       data: chemistIds.map((chemistId) => ({ userId, chemistId, assignedById })),
     });
 
+    this.mail.notifyChemistAssignment(
+      { name: user.name, email: user.email },
+      chemists,
+      assignedByUser?.name ?? 'Admin',
+    );
+
     return this.getAssignedChemists(userId);
   }
 
-  async unassignChemist(userId: string, chemistId: string) {
+  async unassignChemist(userId: string, chemistId: string, currentUser?: any) {
     const record = await this.prisma.salesPersonChemist.findUnique({
       where: { userId_chemistId: { userId, chemistId } },
     });
     if (!record) throw new NotFoundException('Assignment not found');
 
-    await this.prisma.salesPersonChemist.delete({
-      where: { userId_chemistId: { userId, chemistId } },
-    });
+    const [salesPerson, chemist] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+      this.prisma.chemist.findUnique({ where: { id: chemistId }, select: { shopName: true } }),
+    ]);
+
+    await this.prisma.salesPersonChemist.delete({ where: { userId_chemistId: { userId, chemistId } } });
+
+    if (salesPerson && chemist) {
+      this.mail.notifyChemistUnassignment(
+        salesPerson,
+        chemist.shopName,
+        currentUser?.name ?? 'Admin',
+      );
+    }
 
     return { message: 'Chemist unassigned successfully' };
   }

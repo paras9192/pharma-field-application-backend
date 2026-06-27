@@ -1,7 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
+import { Role } from '../../../common/enums/role.enum';
 
 export class UpdateUserDto {
+  @ApiPropertyOptional({ enum: Role })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -9,11 +16,13 @@ export class UpdateUserDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.trim())
   @IsString()
   phone?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.toUpperCase()?.trim())
   @IsString()
   employeeCode?: string;
 

@@ -29,8 +29,8 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
 
   const config = new DocumentBuilder()
-    .setTitle('Pharma Field API')
-    .setDescription('Backend API for Pharma Field Workforce Management')
+    .setTitle('SRL Pulse API')
+    .setDescription('Backend API for SRL Pulse — Field Force Management')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

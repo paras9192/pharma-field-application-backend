@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -15,10 +16,12 @@ export class CreateUserDto {
   name: string;
 
   @ApiProperty()
+  @Transform(({ value }) => value?.toLowerCase()?.trim())
   @IsEmail()
   email: string;
 
   @ApiProperty()
+  @Transform(({ value }) => value?.trim())
   @IsString()
   phone: string;
 
@@ -36,6 +39,7 @@ export class CreateUserDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.toUpperCase()?.trim())
   @IsString()
   employeeCode?: string;
 

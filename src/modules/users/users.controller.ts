@@ -56,15 +56,15 @@ export class UsersController {
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Update user details' })
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto, @CurrentUser() currentUser: any) {
+    return this.usersService.update(id, dto, currentUser);
   }
 
   @Patch(':id/toggle-active')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Activate or deactivate a user' })
-  toggleActive(@Param('id') id: string) {
-    return this.usersService.toggleActive(id);
+  toggleActive(@Param('id') id: string, @CurrentUser() currentUser: any) {
+    return this.usersService.toggleActive(id, currentUser);
   }
 
   @Post('me/change-password')
@@ -115,7 +115,11 @@ export class UsersController {
   @Delete(':id/assigned-chemists/:chemistId')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Remove a chemist assignment from a sales person' })
-  unassignChemist(@Param('id') id: string, @Param('chemistId') chemistId: string) {
-    return this.usersService.unassignChemist(id, chemistId);
+  unassignChemist(
+    @Param('id') id: string,
+    @Param('chemistId') chemistId: string,
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.usersService.unassignChemist(id, chemistId, currentUser);
   }
 }

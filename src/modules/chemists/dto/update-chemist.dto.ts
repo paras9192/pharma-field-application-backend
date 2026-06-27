@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class UpdateChemistDto {
   @ApiPropertyOptional()
@@ -25,11 +25,13 @@ export class UpdateChemistDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.toLowerCase()?.trim())
   @IsString()
   email?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.toUpperCase()?.trim())
   @IsString()
   gstNumber?: string;
 

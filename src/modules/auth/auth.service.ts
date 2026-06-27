@@ -20,7 +20,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
       include: { role: true },
     });
     if (!user || !user.isActive) return null;
@@ -81,7 +81,16 @@ export class AuthService {
       throw new UnauthorizedException('User is inactive');
     }
 
-    await this.prisma.refreshToken.delete({ where: { id: stored.id } });
+    // Delete-as-guard: deleteMany returns a count instead of throwing when the
+    // row is already gone. If two refresh requests race on the same token, only
+    // the one that actually removes the row proceeds; the loser gets a clean
+    // 401 instead of an unhandled P2025 (record not found) 500.
+    const { count } = await this.prisma.refreshToken.deleteMany({
+      where: { id: stored.id },
+    });
+    if (count === 0) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
     return this.login(stored.user);
   }

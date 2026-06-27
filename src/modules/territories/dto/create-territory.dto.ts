@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateTerritoryDto {
   @ApiProperty()
@@ -14,6 +14,7 @@ export class CreateTerritoryDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.toUpperCase()?.trim())
   @IsString()
   code?: string;
 

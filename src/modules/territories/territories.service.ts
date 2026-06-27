@@ -8,6 +8,9 @@ import { CreateStateDto } from './dto/create-state.dto';
 import { CreateDistrictDto } from './dto/create-district.dto';
 import { CreateCityDto } from './dto/create-city.dto';
 import { CreateTerritoryDto } from './dto/create-territory.dto';
+import { UpdateStateDto } from './dto/update-state.dto';
+import { UpdateDistrictDto } from './dto/update-district.dto';
+import { UpdateCityDto } from './dto/update-city.dto';
 import { AssignTerritoryDto } from './dto/assign-territory.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 
@@ -34,6 +37,18 @@ export class TerritoriesService {
     });
     if (!state) throw new NotFoundException('State not found');
     return state;
+  }
+
+  async updateState(id: number, dto: UpdateStateDto) {
+    const state = await this.prisma.state.findUnique({ where: { id } });
+    if (!state) throw new NotFoundException('State not found');
+
+    if (dto.code && dto.code !== state.code) {
+      const existing = await this.prisma.state.findUnique({ where: { code: dto.code } });
+      if (existing) throw new ConflictException('State code already exists');
+    }
+
+    return this.prisma.state.update({ where: { id }, data: dto });
   }
 
   // ─── Districts ────────────────────────────────────────────────────────────
@@ -70,6 +85,34 @@ export class TerritoriesService {
     return district;
   }
 
+  async updateDistrict(id: number, dto: UpdateDistrictDto) {
+    const district = await this.prisma.district.findUnique({ where: { id } });
+    if (!district) throw new NotFoundException('District not found');
+
+    const stateId = dto.stateId ?? district.stateId;
+    const name = dto.name ?? district.name;
+
+    if (dto.stateId && dto.stateId !== district.stateId) {
+      const state = await this.prisma.state.findUnique({ where: { id: dto.stateId } });
+      if (!state) throw new NotFoundException('State not found');
+    }
+
+    if (name !== district.name || stateId !== district.stateId) {
+      const existing = await this.prisma.district.findUnique({
+        where: { name_stateId: { name, stateId } },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('District already exists in this state');
+      }
+    }
+
+    return this.prisma.district.update({
+      where: { id },
+      data: dto,
+      include: { state: true },
+    });
+  }
+
   // ─── Cities ───────────────────────────────────────────────────────────────
 
   async createCity(dto: CreateCityDto) {
@@ -92,6 +135,34 @@ export class TerritoriesService {
       where: districtId ? { districtId } : {},
       include: { district: { include: { state: true } } },
       orderBy: { name: 'asc' },
+    });
+  }
+
+  async updateCity(id: number, dto: UpdateCityDto) {
+    const city = await this.prisma.city.findUnique({ where: { id } });
+    if (!city) throw new NotFoundException('City not found');
+
+    const districtId = dto.districtId ?? city.districtId;
+    const name = dto.name ?? city.name;
+
+    if (dto.districtId && dto.districtId !== city.districtId) {
+      const district = await this.prisma.district.findUnique({ where: { id: dto.districtId } });
+      if (!district) throw new NotFoundException('District not found');
+    }
+
+    if (name !== city.name || districtId !== city.districtId) {
+      const existing = await this.prisma.city.findUnique({
+        where: { name_districtId: { name, districtId } },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('City already exists in this district');
+      }
+    }
+
+    return this.prisma.city.update({
+      where: { id },
+      data: dto,
+      include: { district: { include: { state: true } } },
     });
   }
 

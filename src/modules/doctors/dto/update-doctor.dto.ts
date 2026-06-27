@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class UpdateDoctorDto {
   @ApiPropertyOptional()
@@ -35,6 +35,7 @@ export class UpdateDoctorDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value?.toLowerCase()?.trim())
   @IsString()
   email?: string;
 
