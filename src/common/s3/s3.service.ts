@@ -24,7 +24,7 @@ export class S3Service {
     return multerS3({
       s3: this.client,
       bucket: this.bucket,
-      contentType: multerS3.AUTO_CONTENT_TYPE,
+      contentType: (_req, file, cb) => cb(null, file.mimetype || 'application/octet-stream'),
       key: (_req, file, cb) => {
         const suffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
         const ext = extname(file.originalname) || '.jpg';
