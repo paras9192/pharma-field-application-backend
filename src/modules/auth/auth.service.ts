@@ -125,7 +125,30 @@ export class AuthService {
     if (!user) throw new BadRequestException('User not found');
 
     const { passwordHash, ...profile } = user;
-    return profile;
+
+    // Fields that make a profile feel complete. Profile photo is mandatory;
+    // the rest let the frontend prompt the user to finish their profile.
+    const required: Record<string, unknown> = {
+      profilePhoto: profile.profilePhoto,
+      dateOfBirth: profile.dateOfBirth,
+      gender: profile.gender,
+      bloodGroup: profile.bloodGroup,
+      address: profile.address,
+      emergencyContactName: profile.emergencyContactName,
+      emergencyContactPhone: profile.emergencyContactPhone,
+      aadhaarUrl: profile.aadhaarUrl,
+      panUrl: profile.panUrl,
+      tenthMarksheetUrl: profile.tenthMarksheetUrl,
+    };
+    const missingProfileFields = Object.entries(required)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+
+    return {
+      ...profile,
+      profileComplete: missingProfileFields.length === 0,
+      missingProfileFields,
+    };
   }
 
   generateWelcomeToken(userId: string, email: string): string {

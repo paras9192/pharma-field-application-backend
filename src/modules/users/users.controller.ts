@@ -8,12 +8,17 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { AssignChemistsDto } from './dto/assign-chemists.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -51,6 +56,38 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user by ID' })
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  // ─── Self-service profile (any authenticated user) ────────────────────────
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Update own profile (personal details)' })
+  updateMyProfile(@CurrentUser('id') userId: string, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(userId, dto);
+  }
+
+  @Post('me/photo')
+  @ApiOperation({ summary: 'Upload own profile photo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(S3FilesInterceptor('profile-photos', 'file', 1))
+  uploadMyPhoto(@CurrentUser('id') userId: string, @UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) throw new BadRequestException('No file uploaded');
+    return this.usersService.setProfilePhoto(userId, (files[0] as any).location);
+  }
+
+  @Post('me/documents/:type')
+  @ApiOperation({ summary: 'Upload an employee document (type: aadhaar | pan | tenth-marksheet)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(S3FilesInterceptor('employee-documents', 'file', 1))
+  uploadMyDocument(
+    @CurrentUser('id') userId: string,
+    @Param('type') type: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) throw new BadRequestException('No file uploaded');
+    return this.usersService.setDocument(userId, type, (files[0] as any).location);
   }
 
   @Patch(':id')

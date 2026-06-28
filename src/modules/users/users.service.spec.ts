@@ -10,6 +10,7 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { MailService } from '../../mail/mail.service';
+import { S3Service } from '../../common/s3/s3.service';
 
 jest.mock('bcryptjs');
 const bcryptCompare = bcrypt.compare as jest.Mock;
@@ -73,6 +74,10 @@ const makeMail = () => ({
   notifyChemistUnassignment: jest.fn(),
 });
 
+const makeS3 = () => ({
+  deleteObject: jest.fn().mockResolvedValue(undefined),
+});
+
 describe('UsersService', () => {
   let service: UsersService;
   let prisma: ReturnType<typeof makePrisma>;
@@ -88,6 +93,7 @@ describe('UsersService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: AuthService, useValue: makeAuth() },
         { provide: MailService, useValue: mail },
+        { provide: S3Service, useValue: makeS3() },
       ],
     }).compile();
 

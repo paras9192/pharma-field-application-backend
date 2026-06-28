@@ -14,6 +14,8 @@ import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dt
 import { Role } from '../../common/enums/role.enum';
 import { AuthService } from '../auth/auth.service';
 import { MailService } from '../../mail/mail.service';
+import { S3Service } from '../../common/s3/s3.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 const USER_SELECT = {
   id: true,
@@ -36,6 +38,7 @@ export class UsersService {
     private prisma: PrismaService,
     private authService: AuthService,
     private mail: MailService,
+    private s3: S3Service,
   ) {}
 
   async create(dto: CreateUserDto, createdById: string) {
@@ -114,6 +117,16 @@ export class UsersService {
       where: { id },
       select: {
         ...USER_SELECT,
+        dateOfBirth: true,
+        gender: true,
+        bloodGroup: true,
+        address: true,
+        bio: true,
+        emergencyContactName: true,
+        emergencyContactPhone: true,
+        aadhaarUrl: true,
+        panUrl: true,
+        tenthMarksheetUrl: true,
         employeeTerritories: {
           include: {
             territory: {
@@ -232,6 +245,72 @@ export class UsersService {
     await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
     return { message: 'Password changed successfully' };
+  }
+
+  // ─── Self-service profile ─────────────────────────────────────────────────
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    if (dto.phone) {
+      const existing = await this.prisma.user.findFirst({
+        where: { phone: dto.phone, NOT: { id: userId } },
+      });
+      if (existing) throw new ConflictException('Phone already in use');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...dto,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+      },
+    });
+
+    return this.authService.getProfile(userId);
+  }
+
+  async setProfilePhoto(userId: string, url: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { profilePhoto: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.profilePhoto) {
+      await this.s3.deleteObject(user.profilePhoto).catch(() => {});
+    }
+
+    await this.prisma.user.update({ where: { id: userId }, data: { profilePhoto: url } });
+    return this.authService.getProfile(userId);
+  }
+
+  private readonly DOCUMENT_COLUMNS: Record<string, 'aadhaarUrl' | 'panUrl' | 'tenthMarksheetUrl'> = {
+    aadhaar: 'aadhaarUrl',
+    pan: 'panUrl',
+    'tenth-marksheet': 'tenthMarksheetUrl',
+  };
+
+  async setDocument(userId: string, type: string, url: string) {
+    const column = this.DOCUMENT_COLUMNS[type];
+    if (!column) {
+      throw new BadRequestException(
+        `Invalid document type. Allowed: ${Object.keys(this.DOCUMENT_COLUMNS).join(', ')}`,
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      // Cast select to any to avoid strict generated Prisma typings for partial selects
+      select: { aadhaarUrl: true, panUrl: true, tenthMarksheetUrl: true } as any,
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const previous = user[column];
+    if (previous && typeof previous === 'string') {
+      await this.s3.deleteObject(previous).catch(() => {});
+    }
+
+    await this.prisma.user.update({ where: { id: userId }, data: { [column]: url } });
+    return this.authService.getProfile(userId);
   }
 
   async getAssignedChemists(userId: string) {

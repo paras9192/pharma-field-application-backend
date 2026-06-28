@@ -14,6 +14,8 @@ enum RoleName {
   ADMIN
   MR
   SALES_PERSON
+  ASM
+  ZSM
 }
 
 enum AttendanceStatus {
@@ -67,6 +69,12 @@ enum SettlementType {
   DISCOUNT
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 // ─── Auth & Users ─────────────────────────────────────────────────────────────
 
 model Role {
@@ -89,6 +97,21 @@ model User {
   employeeCode  String?   @unique @map("employee_code")
   profilePhoto  String?   @map("profile_photo")
   dateOfJoining DateTime? @map("date_of_joining") @db.Date
+
+  // Personal details
+  dateOfBirth           DateTime? @map("date_of_birth") @db.Date
+  gender                Gender?
+  bloodGroup            String?   @map("blood_group")
+  address               String?
+  bio                   String?
+  emergencyContactName  String?   @map("emergency_contact_name")
+  emergencyContactPhone String?   @map("emergency_contact_phone")
+
+  // KYC / employee documents (S3 URLs)
+  aadhaarUrl            String?   @map("aadhaar_url")
+  panUrl                String?   @map("pan_url")
+  tenthMarksheetUrl     String?   @map("tenth_marksheet_url")
+
   isActive      Boolean   @default(true) @map("is_active")
   createdById   String?   @map("created_by")
   createdBy     User?     @relation("CreatedByUser", fields: [createdById], references: [id])
