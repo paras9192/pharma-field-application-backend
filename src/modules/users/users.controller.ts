@@ -8,17 +8,16 @@ import {
   Post,
   Query,
   UseGuards,
-  UseInterceptors,
-  UploadedFiles,
-  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
+import { S3Service } from '../../common/s3/s3.service';
+import { AttachFileDto } from '../../common/s3/dto/attach-files.dto';
+import { UploadPurpose } from '../../common/s3/upload.constants';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { AssignChemistsDto } from './dto/assign-chemists.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,7 +32,10 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private s3: S3Service,
+  ) {}
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
@@ -67,27 +69,21 @@ export class UsersController {
   }
 
   @Post('me/photo')
-  @ApiOperation({ summary: 'Upload own profile photo' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
-  @UseInterceptors(S3FilesInterceptor('profile-photos', 'file', 1))
-  uploadMyPhoto(@CurrentUser('id') userId: string, @UploadedFiles() files: Express.Multer.File[]) {
-    if (!files || files.length === 0) throw new BadRequestException('No file uploaded');
-    return this.usersService.setProfilePhoto(userId, (files[0] as any).location);
+  @ApiOperation({ summary: 'Save own profile photo already uploaded to S3 (key from POST /uploads/presign, purpose "profile-photos")' })
+  async uploadMyPhoto(@CurrentUser('id') userId: string, @Body() dto: AttachFileDto) {
+    await this.s3.verifyUploads(UploadPurpose.PROFILE_PHOTOS, userId, [dto.key]);
+    return this.usersService.setProfilePhoto(userId, this.s3.urlForKey(dto.key));
   }
 
   @Post('me/documents/:type')
-  @ApiOperation({ summary: 'Upload an employee document (type: aadhaar | pan | tenth-marksheet)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
-  @UseInterceptors(S3FilesInterceptor('employee-documents', 'file', 1))
-  uploadMyDocument(
+  @ApiOperation({ summary: 'Save an employee document already uploaded to S3 (type: aadhaar | pan | tenth-marksheet; key from POST /uploads/presign, purpose "employee-documents")' })
+  async uploadMyDocument(
     @CurrentUser('id') userId: string,
     @Param('type') type: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: AttachFileDto,
   ) {
-    if (!files || files.length === 0) throw new BadRequestException('No file uploaded');
-    return this.usersService.setDocument(userId, type, (files[0] as any).location);
+    await this.s3.verifyUploads(UploadPurpose.EMPLOYEE_DOCUMENTS, userId, [dto.key]);
+    return this.usersService.setDocument(userId, type, this.s3.urlForKey(dto.key));
   }
 
   @Patch(':id')

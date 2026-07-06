@@ -1,9 +1,9 @@
 import {
   Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post,
-  Query, UploadedFiles, UseGuards, UseInterceptors, BadRequestException,
+  Query, UseGuards,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags,
+  ApiBearerAuth, ApiOperation, ApiQuery, ApiTags,
 } from '@nestjs/swagger';
 import { VisitsService } from './visits.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
@@ -12,14 +12,19 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
+import { S3Service } from '../../common/s3/s3.service';
+import { AttachFilesDto } from '../../common/s3/dto/attach-files.dto';
+import { UploadPurpose } from '../../common/s3/upload.constants';
 
 @ApiTags('Visits')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('visits')
 export class VisitsController {
-  constructor(private visitsService: VisitsService) {}
+  constructor(
+    private visitsService: VisitsService,
+    private s3: S3Service,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Log a new visit' })
@@ -79,22 +84,14 @@ export class VisitsController {
   }
 
   @Post(':id/images')
-  @ApiOperation({ summary: 'Upload visit images to S3 (jpg/png/webp/heic, max 10 MB each, max 10 files)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } },
-    },
-  })
-  @UseInterceptors(S3FilesInterceptor('visits', 'files', 10))
-  uploadImages(
+  @ApiOperation({ summary: 'Attach visit images already uploaded to S3 (keys from POST /uploads/presign, purpose "visits")' })
+  async uploadImages(
     @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: AttachFilesDto,
     @CurrentUser() currentUser: any,
   ) {
-    if (!files || files.length === 0) throw new BadRequestException('No files uploaded');
-    const mapped = files.map((f: any) => ({ path: f.location, filename: f.originalname }));
+    await this.s3.verifyUploads(UploadPurpose.VISITS, currentUser.id, dto.files.map((f) => f.key));
+    const mapped = dto.files.map((f) => ({ path: this.s3.urlForKey(f.key), filename: f.filename }));
     return this.visitsService.uploadImages(id, mapped, currentUser);
   }
 

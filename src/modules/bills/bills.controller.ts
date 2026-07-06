@@ -7,15 +7,10 @@ import {
   ParseIntPipe,
   Post,
   Query,
-  UploadedFiles,
   UseGuards,
-  UseInterceptors,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiConsumes,
-  ApiBody,
   ApiOperation,
   ApiQuery,
   ApiTags,
@@ -29,14 +24,19 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
+import { S3Service } from '../../common/s3/s3.service';
+import { AttachFilesDto } from '../../common/s3/dto/attach-files.dto';
+import { UploadPurpose } from '../../common/s3/upload.constants';
 
 @ApiTags('Bills')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('bills')
 export class BillsController {
-  constructor(private billsService: BillsService) {}
+  constructor(
+    private billsService: BillsService,
+    private s3: S3Service,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a bill — SA/Admin only. SP → 403, MR → 401' })
@@ -65,24 +65,14 @@ export class BillsController {
 
   @Post(':id/upload')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
-  @ApiOperation({ summary: 'Upload one or more bill images / PDF scans (max 10 files, 10 MB each)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        files: { type: 'array', items: { type: 'string', format: 'binary' } },
-      },
-    },
-  })
-  @UseInterceptors(S3FilesInterceptor('bills', 'files', 10))
-  uploadBillImages(
+  @ApiOperation({ summary: 'Attach bill images / PDF scans already uploaded to S3 (keys from POST /uploads/presign, purpose "bills")' })
+  async uploadBillImages(
     @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: AttachFilesDto,
     @CurrentUser() currentUser: any,
   ) {
-    if (!files || files.length === 0) throw new BadRequestException('No files uploaded');
-    const mapped = files.map((f: any) => ({ path: f.location, filename: f.originalname }));
+    await this.s3.verifyUploads(UploadPurpose.BILLS, currentUser.id, dto.files.map((f) => f.key));
+    const mapped = dto.files.map((f) => ({ path: this.s3.urlForKey(f.key), filename: f.filename }));
     return this.billsService.uploadBillImages(id, mapped, currentUser);
   }
 

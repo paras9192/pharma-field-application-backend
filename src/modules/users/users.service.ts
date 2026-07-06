@@ -257,15 +257,16 @@ export class UsersService {
       if (existing) throw new ConflictException('Phone already in use');
     }
 
-    await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...dto,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
       },
+      include: AuthService.PROFILE_INCLUDE,
     });
 
-    return this.authService.getProfile(userId);
+    return this.authService.buildProfile(updated);
   }
 
   async setProfilePhoto(userId: string, url: string) {
@@ -275,12 +276,17 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
+    // Fire-and-forget: don't make the response wait on deleting the old file
     if (user.profilePhoto) {
-      await this.s3.deleteObject(user.profilePhoto).catch(() => {});
+      void this.s3.deleteObject(user.profilePhoto).catch(() => {});
     }
 
-    await this.prisma.user.update({ where: { id: userId }, data: { profilePhoto: url } });
-    return this.authService.getProfile(userId);
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { profilePhoto: url },
+      include: AuthService.PROFILE_INCLUDE,
+    });
+    return this.authService.buildProfile(updated);
   }
 
   private readonly DOCUMENT_COLUMNS: Record<string, 'aadhaarUrl' | 'panUrl' | 'tenthMarksheetUrl'> = {
@@ -305,12 +311,17 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     const previous = user[column];
+    // Fire-and-forget: don't make the response wait on deleting the old file
     if (previous && typeof previous === 'string') {
-      await this.s3.deleteObject(previous).catch(() => {});
+      void this.s3.deleteObject(previous).catch(() => {});
     }
 
-    await this.prisma.user.update({ where: { id: userId }, data: { [column]: url } });
-    return this.authService.getProfile(userId);
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { [column]: url },
+      include: AuthService.PROFILE_INCLUDE,
+    });
+    return this.authService.buildProfile(updated);
   }
 
   async getAssignedChemists(userId: string) {

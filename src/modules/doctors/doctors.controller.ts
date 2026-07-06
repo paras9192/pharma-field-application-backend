@@ -1,9 +1,9 @@
 import {
   Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post,
-  Query, UploadedFiles, UseGuards, UseInterceptors, BadRequestException,
+  Query, UseGuards,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags,
+  ApiBearerAuth, ApiOperation, ApiTags,
 } from '@nestjs/swagger';
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
@@ -14,14 +14,19 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { S3FilesInterceptor } from '../../common/s3/s3-files.interceptor';
+import { S3Service } from '../../common/s3/s3.service';
+import { AttachFilesDto } from '../../common/s3/dto/attach-files.dto';
+import { UploadPurpose } from '../../common/s3/upload.constants';
 
 @ApiTags('Doctors')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('doctors')
 export class DoctorsController {
-  constructor(private doctorsService: DoctorsService) {}
+  constructor(
+    private doctorsService: DoctorsService,
+    private s3: S3Service,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Add a new doctor' })
@@ -55,22 +60,14 @@ export class DoctorsController {
   }
 
   @Post(':id/images')
-  @ApiOperation({ summary: 'Upload doctor images to S3 (jpg/png/webp/heic, max 10 MB each, max 10 files)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } } },
-    },
-  })
-  @UseInterceptors(S3FilesInterceptor('doctors', 'files', 10))
-  uploadImages(
+  @ApiOperation({ summary: 'Attach doctor images already uploaded to S3 (keys from POST /uploads/presign, purpose "doctors")' })
+  async uploadImages(
     @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: AttachFilesDto,
     @CurrentUser() currentUser: any,
   ) {
-    if (!files || files.length === 0) throw new BadRequestException('No files uploaded');
-    const mapped = files.map((f: any) => ({ path: f.location, filename: f.originalname }));
+    await this.s3.verifyUploads(UploadPurpose.DOCTORS, currentUser.id, dto.files.map((f) => f.key));
+    const mapped = dto.files.map((f) => ({ path: this.s3.urlForKey(f.key), filename: f.filename }));
     return this.doctorsService.uploadImages(id, mapped, currentUser);
   }
 

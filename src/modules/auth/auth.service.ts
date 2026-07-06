@@ -106,24 +106,32 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
-  async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+  // Shared by getProfile and the profile-mutation paths in UsersService so an
+  // update can return the fresh profile in one DB round trip (the remote Neon
+  // instance makes every extra query expensive).
+  static readonly PROFILE_INCLUDE = {
+    role: true,
+    employeeTerritories: {
       include: {
-        role: true,
-        employeeTerritories: {
+        territory: {
           include: {
-            territory: {
-              include: {
-                city: { include: { district: { include: { state: true } } } },
-              },
-            },
+            city: { include: { district: { include: { state: true } } } },
           },
         },
       },
+    },
+  } as const;
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: AuthService.PROFILE_INCLUDE,
     });
     if (!user) throw new BadRequestException('User not found');
+    return this.buildProfile(user);
+  }
 
+  buildProfile(user: any) {
     const { passwordHash, ...profile } = user;
 
     // Fields that make a profile feel complete. Profile photo is mandatory;
