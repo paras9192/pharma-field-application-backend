@@ -55,22 +55,24 @@ export class AttendanceController {
   }
 
   @Get('list')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiOperation({ summary: 'List all attendance records (admin)' })
-  @ApiQuery({ name: 'userId', required: false })
+  @ApiOperation({
+    summary:
+      'List attendance records. Admin/Super Admin see everyone (optionally filtered by userId); every other role sees only their own history.',
+  })
+  @ApiQuery({ name: 'userId', required: false, description: 'Admin only — ignored for other roles' })
   @ApiQuery({ name: 'date', required: false })
   @ApiQuery({ name: 'from', required: false })
   @ApiQuery({ name: 'to', required: false })
   getAttendanceList(
+    @CurrentUser() currentUser: any,
     @Query() query: PaginationDto & { userId?: string; from?: string; to?: string; date?: string },
   ) {
-    return this.attendanceService.getAttendanceList(query);
+    return this.attendanceService.getAttendanceList(query, currentUser);
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiOperation({ summary: 'Get attendance record by ID' })
-  getAttendanceById(@Param('id') id: string) {
-    return this.attendanceService.getAttendanceById(id);
+  @ApiOperation({ summary: 'Get attendance record by ID (own record, or any record for admins)' })
+  getAttendanceById(@Param('id') id: string, @CurrentUser() currentUser: any) {
+    return this.attendanceService.getAttendanceById(id, currentUser);
   }
 }

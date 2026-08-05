@@ -43,15 +43,39 @@ export class GeocodingService {
     }
   }
 
-  /** Build a concise, readable address from Nominatim's address components. */
+  /**
+   * Build the full street address from Nominatim's address components, ordered
+   * narrowest to widest.
+   *
+   * Each level is kept rather than collapsed with `||`: a manager checking where
+   * a rep clocked in needs the building and road, not just "Sector 62, Noida".
+   * Country is dropped (every user is in India) and repeated components are
+   * removed, because Nominatim frequently returns the same name for several
+   * levels (e.g. suburb === city_district === city).
+   */
   private format(a: any): string | null {
     if (!a) return null;
+    const street = [a.house_number, a.road].filter(Boolean).join(' ');
     const parts = [
-      a.suburb || a.neighbourhood || a.road,
-      a.city || a.town || a.village || a.county,
+      a.amenity || a.building || a.shop || a.office,
+      street,
+      a.neighbourhood,
+      a.suburb,
+      a.city_district || a.village || a.town,
+      a.city || a.municipality,
+      a.county || a.state_district,
       a.state,
       a.postcode,
     ].filter(Boolean);
-    return parts.length ? parts.join(', ') : null;
+
+    const seen = new Set<string>();
+    const unique = parts.filter((p: string) => {
+      const key = String(p).toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return unique.length ? unique.join(', ') : null;
   }
 }

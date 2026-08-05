@@ -3,6 +3,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -10,6 +11,12 @@ import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 import { GeocodingService } from '../../common/geocoding/geocoding.service';
+import { Role } from '../../common/enums/role.enum';
+
+/** Only these two roles see attendance across the whole company. */
+function isAdminRole(roleName?: string) {
+  return roleName === Role.SUPER_ADMIN || roleName === Role.ADMIN;
+}
 
 @Injectable()
 export class AttendanceService {
@@ -89,11 +96,21 @@ export class AttendanceService {
     return this.getAttendanceList({ ...query, userId });
   }
 
+  /**
+   * Admin/Super Admin may read the whole company and filter by `userId`; every
+   * other role is pinned to their own history regardless of what they ask for.
+   * Called without `currentUser` internally (getMyAttendance), which skips the
+   * pinning because the caller has already chosen the user.
+   */
   async getAttendanceList(
     query: PaginationDto & { userId?: string; from?: string; to?: string; date?: string },
+    currentUser?: any,
   ) {
-    const { page = 1, limit = 20, userId, from, to, date } = query;
+    const { page = 1, limit = 20, from, to, date } = query;
     const { skip, take } = paginate(page, limit);
+
+    const userId =
+      currentUser && !isAdminRole(currentUser.role?.name) ? currentUser.id : query.userId;
 
     const where: any = {};
     if (userId) where.userId = userId;
@@ -119,12 +136,16 @@ export class AttendanceService {
     return buildPaginatedResponse(data, total, page, limit);
   }
 
-  async getAttendanceById(id: string) {
+  async getAttendanceById(id: string, currentUser?: any) {
     const record = await this.prisma.attendance.findUnique({
       where: { id },
       include: { user: { select: { id: true, name: true } } },
     });
     if (!record) throw new NotFoundException('Attendance record not found');
+
+    if (currentUser && !isAdminRole(currentUser.role?.name) && record.userId !== currentUser.id) {
+      throw new ForbiddenException('Access denied');
+    }
     return record;
   }
 
