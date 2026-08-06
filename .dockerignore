@@ -7,3 +7,8 @@ uploads
 *.log
 coverage
 .git
+.github
+.claude
+test
+docs
+*.md
