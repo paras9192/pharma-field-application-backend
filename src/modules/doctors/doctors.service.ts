@@ -4,7 +4,7 @@ import { S3Service } from '../../common/s3/s3.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
-import { Role } from '../../common/enums/role.enum';
+import { Role, isMrRole } from '../../common/enums/role.enum';
 
 const DOCTOR_INCLUDE = {
   territory: true,
@@ -95,7 +95,7 @@ export class DoctorsService {
   async update(id: string, dto: UpdateDoctorDto, currentUser: any) {
     const doctor = await this.findOne(id);
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (isMrRole(currentUser.role.name) || currentUser.role.name === Role.SALES_PERSON) {
       if (doctor.addedBy?.id !== currentUser.id) {
         throw new ForbiddenException('You can only edit doctors you created');
       }
@@ -138,7 +138,7 @@ export class DoctorsService {
     const image = await this.prisma.doctorImage.findFirst({ where: { id: imageId, doctorId } });
     if (!image) throw new NotFoundException('Image not found on this doctor');
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (isMrRole(currentUser.role.name) || currentUser.role.name === Role.SALES_PERSON) {
       if (image.uploadedById !== currentUser.id) {
         throw new ForbiddenException('You can only delete images you uploaded');
       }

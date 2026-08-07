@@ -10,11 +10,12 @@ import { S3Service } from '../../common/s3/s3.service';
 import { CreateBillDto } from './dto/create-bill.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
-import { Role } from '../../common/enums/role.enum';
+import { Role, isMrRole } from '../../common/enums/role.enum';
 import { ChemistsService } from '../chemists/chemists.service';
 
+// ASM and ZSM are treated exactly like an MR, so the bill denial covers them too.
 function assertNotMR(currentUser: any) {
-  if (currentUser?.role?.name === Role.MR) {
+  if (isMrRole(currentUser?.role?.name)) {
     throw new UnauthorizedException('MR users do not have access to bills');
   }
 }

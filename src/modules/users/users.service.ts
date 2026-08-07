@@ -71,7 +71,7 @@ export class UsersService {
         employeeCode: dto.employeeCode,
         dateOfJoining: dto.dateOfJoining ? new Date(dto.dateOfJoining) : undefined,
         createdById,
-      },
+      } as any,
       select: USER_SELECT,
     });
 
@@ -148,6 +148,7 @@ export class UsersService {
     const { role, ...rest } = dto;
     const performedBy: string = currentUser?.name ?? 'Admin';
 
+    let roleId: number | undefined;
     if (role) {
       if (
         currentUser?.role?.name === Role.ADMIN &&
@@ -157,36 +158,13 @@ export class UsersService {
       }
       const roleRecord = await this.prisma.role.findUnique({ where: { name: role as any } });
       if (!roleRecord) throw new BadRequestException(`Role ${role} not found`);
-
-      if (rest.phone) {
-        const existing = await this.prisma.user.findFirst({ where: { phone: rest.phone, NOT: { id } } });
-        if (existing) throw new ConflictException('Phone already in use');
-      }
-      if (rest.employeeCode) {
-        const existing = await this.prisma.user.findFirst({ where: { employeeCode: rest.employeeCode, NOT: { id } } });
-        if (existing) throw new ConflictException('Employee code already in use');
-      }
-
-      const updated = await this.prisma.user.update({
-        where: { id },
-        data: { ...rest, roleId: roleRecord.id, dateOfJoining: rest.dateOfJoining ? new Date(rest.dateOfJoining) : undefined } as any,
-        select: USER_SELECT,
-      });
-
-      const changes = this._buildChanges(target, rest, target.role?.name, role);
-      this.mail.notifyUserUpdated(
-        { name: target.name, email: target.email, role: target.role },
-        changes,
-        performedBy,
-      );
-      return updated;
+      roleId = roleRecord.id;
     }
 
     if (rest.phone) {
       const existing = await this.prisma.user.findFirst({ where: { phone: rest.phone, NOT: { id } } });
       if (existing) throw new ConflictException('Phone already in use');
     }
-
     if (rest.employeeCode) {
       const existing = await this.prisma.user.findFirst({ where: { employeeCode: rest.employeeCode, NOT: { id } } });
       if (existing) throw new ConflictException('Employee code already in use');
@@ -194,11 +172,15 @@ export class UsersService {
 
     const updated = await this.prisma.user.update({
       where: { id },
-      data: { ...rest, dateOfJoining: rest.dateOfJoining ? new Date(rest.dateOfJoining) : undefined },
+      data: {
+        ...rest,
+        ...(roleId !== undefined ? { roleId } : {}),
+        dateOfJoining: rest.dateOfJoining ? new Date(rest.dateOfJoining) : undefined,
+      } as any,
       select: USER_SELECT,
     });
 
-    const changes = this._buildChanges(target, rest, undefined, undefined);
+    const changes = this._buildChanges(target, rest, target.role?.name, role);
     this.mail.notifyUserUpdated(
       { name: target.name, email: target.email, role: target.role },
       changes,

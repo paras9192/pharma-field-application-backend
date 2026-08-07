@@ -117,6 +117,12 @@ model User {
   createdBy     User?     @relation("CreatedByUser", fields: [createdById], references: [id])
   createdUsers  User[]    @relation("CreatedByUser")
 
+  // Reporting line: MR / Sales Person → ASM → ZSM. Null for ZSM and the admin
+  // roles, which sit at the top of the chain.
+  managerId     String?   @map("manager_id")
+  manager       User?     @relation("UserManager", fields: [managerId], references: [id])
+  directReports User[]    @relation("UserManager")
+
   refreshTokens       RefreshToken[]
   employeeTerritories EmployeeTerritory[]
   attendance          Attendance[]
@@ -141,6 +147,7 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([managerId])
   @@map("users")
 }
 

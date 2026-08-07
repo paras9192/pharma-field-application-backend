@@ -9,7 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDailyReportDto } from './dto/create-daily-report.dto';
 import { UpdateDailyReportDto } from './dto/update-daily-report.dto';
 import { PaginationDto, paginate, buildPaginatedResponse } from '../../common/dto/pagination.dto';
-import { Role } from '../../common/enums/role.enum';
+import { Role, isMrRole } from '../../common/enums/role.enum';
 import { MailService } from '../../mail/mail.service';
 
 // Parse a YYYY-MM-DD string as UTC midnight to avoid local-timezone shifts
@@ -74,7 +74,7 @@ export class DailyReportsService {
     if (!report) throw new NotFoundException('Report not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (isMrRole(currentUser.role.name) || currentUser.role.name === Role.SALES_PERSON) &&
       report.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');
@@ -102,7 +102,7 @@ export class DailyReportsService {
     if (!report) throw new NotFoundException('Report not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (isMrRole(currentUser.role.name) || currentUser.role.name === Role.SALES_PERSON) &&
       report.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');
@@ -133,7 +133,7 @@ export class DailyReportsService {
 
     const where: any = {};
 
-    if (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) {
+    if (isMrRole(currentUser.role.name) || currentUser.role.name === Role.SALES_PERSON) {
       where.userId = currentUser.id;
     } else if (query.userId) {
       where.userId = query.userId;
@@ -169,7 +169,7 @@ export class DailyReportsService {
     if (!report) throw new NotFoundException('Report not found');
 
     if (
-      (currentUser.role.name === Role.MR || currentUser.role.name === Role.SALES_PERSON) &&
+      (isMrRole(currentUser.role.name) || currentUser.role.name === Role.SALES_PERSON) &&
       report.userId !== currentUser.id
     ) {
       throw new ForbiddenException('Access denied');

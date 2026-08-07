@@ -22,7 +22,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Role } from '../../common/enums/role.enum';
+import { Role, MR_ROLES } from '../../common/enums/role.enum';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { S3Service } from '../../common/s3/s3.service';
 import { AttachFilesDto } from '../../common/s3/dto/attach-files.dto';
@@ -64,7 +64,7 @@ export class BillsController {
   }
 
   @Post(':id/upload')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, ...MR_ROLES)
   @ApiOperation({ summary: 'Attach bill images / PDF scans already uploaded to S3 (keys from POST /uploads/presign, purpose "bills")' })
   async uploadBillImages(
     @Param('id') id: string,
@@ -77,7 +77,7 @@ export class BillsController {
   }
 
   @Delete(':id/images/:imageId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, Role.MR)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_PERSON, ...MR_ROLES)
   @ApiOperation({ summary: 'Delete a specific bill image' })
   deleteBillImage(
     @Param('id') id: string,

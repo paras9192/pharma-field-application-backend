@@ -73,7 +73,6 @@ describe('BillsService', () => {
   let prisma: ReturnType<typeof makePrisma>;
 
   const mrUser = { id: 'user-1', role: { name: 'MR' } };
-  const asmUser = { id: 'user-2', role: { name: 'ASM' } };
   const adminUser = { id: 'user-3', role: { name: 'ADMIN' } };
   const salesUser = { id: 'user-4', role: { name: 'SALES_PERSON' } };
 
@@ -124,11 +123,16 @@ describe('BillsService', () => {
       expect(result).toHaveProperty('id');
     });
 
-    it('allows ASM to create a bill', async () => {
+    // ASM and ZSM have exactly MR's access, and MR has no access to bills.
+    it.each([['ASM'], ['ZSM']])('blocks %s from creating a bill, same as an MR', async (roleName) => {
       prisma.chemist.findUnique.mockResolvedValue(mockChemist);
       prisma.bill.create.mockResolvedValue(mockBill);
 
-      await expect(service.create('user-2', dto as any, asmUser)).resolves.toBeDefined();
+      await expect(
+        service.create('user-2', dto as any, { id: 'user-2', role: { name: roleName } }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(prisma.bill.create).not.toHaveBeenCalled();
     });
 
     it('throws NotFoundException when chemist does not exist', async () => {

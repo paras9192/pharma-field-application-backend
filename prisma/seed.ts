@@ -25,6 +25,8 @@ async function main() {
   const roleData = [
     { name: RoleName.SUPER_ADMIN, description: 'Business owner with full system access' },
     { name: RoleName.ADMIN,       description: 'Office manager with administrative access' },
+    { name: RoleName.ZSM,         description: 'Zonal Sales Manager - field manager with ASMs reporting to them' },
+    { name: RoleName.ASM,         description: 'Area Sales Manager - field manager with MRs/Sales Persons reporting to them' },
     { name: RoleName.MR,          description: 'Medical Representative - field employee' },
     { name: RoleName.SALES_PERSON,description: 'Sales Person - field employee' },
   ];

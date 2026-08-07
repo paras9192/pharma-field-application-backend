@@ -19,6 +19,8 @@ const bcryptHash = bcrypt.hash as jest.Mock;
 const mockRole = { id: 'role-mr', name: 'MR' };
 const mockAdminRole = { id: 'role-admin', name: 'ADMIN' };
 const mockSuperAdminRole = { id: 'role-sa', name: 'SUPER_ADMIN' };
+const mockAsmRole = { id: 'role-asm', name: 'ASM' };
+const mockZsmRole = { id: 'role-zsm', name: 'ZSM' };
 
 const mockUser = {
   id: 'user-1',
@@ -250,6 +252,25 @@ describe('UsersService', () => {
 
       await expect(service.update('user-1', { phone: '9999999999' }, {}))
         .rejects.toThrow(ConflictException);
+    });
+
+    // ASM and ZSM exist in the RoleName enum and in the roles table, but were
+    // missing from the Role enum the DTO validates against, so promoting anyone
+    // into them failed with "role must be one of the following values".
+    it.each([
+      ['ASM', mockAsmRole],
+      ['ZSM', mockZsmRole],
+    ])('updates a user to the %s role', async (roleName, roleRecord) => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.role.findUnique.mockResolvedValue(roleRecord);
+      prisma.user.update.mockResolvedValue({ ...mockUser, role: roleRecord });
+
+      await service.update('user-1', { role: roleName as any }, { role: { name: 'SUPER_ADMIN' } });
+
+      expect(prisma.role.findUnique).toHaveBeenCalledWith({ where: { name: roleName } });
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ roleId: roleRecord.id }) }),
+      );
     });
   });
 

@@ -5,7 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Role } from '../../common/enums/role.enum';
+import { Role, MR_ROLES, isMrRole } from '../../common/enums/role.enum';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -111,7 +111,7 @@ export class DashboardController {
   }
 
   @Get('mr')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MR)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, ...MR_ROLES)
   @ApiOperation({
     summary: 'MR dashboard — visit KPIs, today\'s schedule, follow-ups, monthly productivity',
     description: 'MR sees their own data. SUPER_ADMIN/ADMIN can pass ?userId= to view any MR.',
@@ -123,7 +123,7 @@ export class DashboardController {
     @Query('userId') userId?: string,
     @Query('date') date?: string,
   ) {
-    const targetId = currentUser.role.name === Role.MR ? currentUser.id : (userId ?? currentUser.id);
+    const targetId = isMrRole(currentUser.role.name) ? currentUser.id : (userId ?? currentUser.id);
     return this.dashboardService.getMRDashboard(targetId, date);
   }
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Role } from '../../common/enums/role.enum';
+import { Role, isMrRole } from '../../common/enums/role.enum';
 
 @Injectable()
 export class DashboardService {
@@ -999,7 +999,7 @@ export class DashboardService {
       if (pendingFollowUps > 0) {
         alerts.push({ type: 'PENDING_FOLLOWUPS', severity: 'MEDIUM', message: `${pendingFollowUps} visit follow-ups are overdue`, count: pendingFollowUps });
       }
-    } else if (currentUser.role.name === Role.MR) {
+    } else if (isMrRole(currentUser.role.name)) {
       const [pendingFollowUps, todayVisitsCount, attendance, todayReport] = await Promise.all([
         this.prisma.visit.count({ where: { userId: currentUser.id, followUpDate: { lte: new Date() }, followUpDone: false } }),
         this.prisma.visit.count({ where: { userId: currentUser.id, visitDate: { gte: today.toDate(), lt: today.add(1, 'day').toDate() } } }),
