@@ -86,6 +86,36 @@ export class UsersController {
     return this.usersService.setDocument(userId, type, this.s3.urlForKey(dto.key));
   }
 
+  // ─── Admin uploads on a user's behalf ──────────────────────────────────────
+  // Declared after the `me/...` routes above so those keep matching first —
+  // otherwise `:id` would swallow "me". The S3 key is verified against the
+  // *admin* who presigned it, while the record written is the target user's.
+
+  @Post(':id/photo')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: "Set another user's profile photo (key from POST /uploads/presign, purpose \"profile-photos\")" })
+  async uploadUserPhoto(
+    @Param('id') id: string,
+    @CurrentUser('id') actorId: string,
+    @Body() dto: AttachFileDto,
+  ) {
+    await this.s3.verifyUploads(UploadPurpose.PROFILE_PHOTOS, actorId, [dto.key]);
+    return this.usersService.setProfilePhoto(id, this.s3.urlForKey(dto.key));
+  }
+
+  @Post(':id/documents/:type')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: "Set another user's document (type: aadhaar | pan | tenth-marksheet)" })
+  async uploadUserDocument(
+    @Param('id') id: string,
+    @Param('type') type: string,
+    @CurrentUser('id') actorId: string,
+    @Body() dto: AttachFileDto,
+  ) {
+    await this.s3.verifyUploads(UploadPurpose.EMPLOYEE_DOCUMENTS, actorId, [dto.key]);
+    return this.usersService.setDocument(id, type, this.s3.urlForKey(dto.key));
+  }
+
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Update user details' })

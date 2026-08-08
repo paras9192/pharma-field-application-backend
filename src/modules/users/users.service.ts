@@ -32,6 +32,23 @@ const USER_SELECT = {
   createdBy: { select: { id: true, name: true } },
 };
 
+/**
+ * The personal / KYC fields. Deliberately kept out of USER_SELECT so the list
+ * endpoint stays lean — only the single-user reads and writes pull them in.
+ */
+const PERSONAL_SELECT = {
+  dateOfBirth: true,
+  gender: true,
+  bloodGroup: true,
+  address: true,
+  bio: true,
+  emergencyContactName: true,
+  emergencyContactPhone: true,
+  aadhaarUrl: true,
+  panUrl: true,
+  tenthMarksheetUrl: true,
+};
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -117,16 +134,7 @@ export class UsersService {
       where: { id },
       select: {
         ...USER_SELECT,
-        dateOfBirth: true,
-        gender: true,
-        bloodGroup: true,
-        address: true,
-        bio: true,
-        emergencyContactName: true,
-        emergencyContactPhone: true,
-        aadhaarUrl: true,
-        panUrl: true,
-        tenthMarksheetUrl: true,
+        ...PERSONAL_SELECT,
         employeeTerritories: {
           include: {
             territory: {
@@ -161,6 +169,10 @@ export class UsersService {
       roleId = roleRecord.id;
     }
 
+    if (rest.email) {
+      const existing = await this.prisma.user.findFirst({ where: { email: rest.email, NOT: { id } } });
+      if (existing) throw new ConflictException('Email already in use');
+    }
     if (rest.phone) {
       const existing = await this.prisma.user.findFirst({ where: { phone: rest.phone, NOT: { id } } });
       if (existing) throw new ConflictException('Phone already in use');
@@ -175,9 +187,15 @@ export class UsersService {
       data: {
         ...rest,
         ...(roleId !== undefined ? { roleId } : {}),
+        // Both dates arrive as "YYYY-MM-DD" strings; Prisma needs real Dates for
+        // the DateTime columns, and an unconverted string is rejected at runtime.
         dateOfJoining: rest.dateOfJoining ? new Date(rest.dateOfJoining) : undefined,
+        dateOfBirth: rest.dateOfBirth ? new Date(rest.dateOfBirth) : undefined,
       } as any,
-      select: USER_SELECT,
+      // The personal fields are not in USER_SELECT (the list endpoint stays lean),
+      // so add them here — otherwise a save returns a record without the values
+      // that were just written.
+      select: { ...USER_SELECT, ...PERSONAL_SELECT },
     });
 
     const changes = this._buildChanges(target, rest, target.role?.name, role);
