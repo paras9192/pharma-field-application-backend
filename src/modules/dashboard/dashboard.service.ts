@@ -165,7 +165,21 @@ export class DashboardService {
         employeeTerritories: {
           include: { user: { select: { id: true, name: true, role: true } } },
         },
-        _count: { select: { doctors: true, chemists: true, visits: true } },
+        // Doctors and chemists are soft-deleted (isActive: false), so an
+        // unfiltered _count keeps reporting records the user has deleted. Visits
+        // have no soft-delete flag and are historical fact — they stay counted
+        // even when the doctor or chemist they were logged against is gone.
+        // Doctors and chemists are soft-deleted (isActive: false), so an
+        // unfiltered _count keeps reporting records the user has deleted. Visits
+        // have no soft-delete flag and are historical fact — they stay counted
+        // even when the doctor or chemist they were logged against is gone.
+        _count: {
+          select: {
+            doctors: { where: { isActive: true } },
+            chemists: { where: { isActive: true } },
+            visits: true,
+          },
+        },
       },
     });
 
